@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 
-export const API_BASE_URL = "http://4.236.163.93";
+export const API_BASE_URL = "https://erp.gygaview.co.ke";
 
 // Token management
 let accessToken: string | null = localStorage.getItem("access_token");
