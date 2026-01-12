@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import {
   Plus,
   Search,
-  Filter,
   LayoutGrid,
   List,
   Clock,
@@ -22,114 +21,11 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useState } from "react";
+import { useProjects, type ProjectsFilters } from "@/hooks/use-projects";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
-interface Project {
-  id: number;
-  name: string;
-  customer: string;
-  email: string;
-  phone: string;
-  type: "fiber" | "wireless" | "ppoe" | "hotspot" | "hybrid";
-  status: "planning" | "in_progress" | "completed" | "on_hold" | "cancelled";
-  priority: "low" | "medium" | "high" | "critical";
-  progress: number;
-  team: number;
-  budget: number;
-  spent: number;
-  startDate: string;
-  deadline: string;
-  location: string;
-}
-
-const projects: Project[] = [
-  {
-    id: 1,
-    name: "Kilimani Fiber Installation",
-    customer: "ABC Company Ltd",
-    email: "contact@abc.com",
-    phone: "+254700000001",
-    type: "fiber",
-    status: "in_progress",
-    priority: "high",
-    progress: 65,
-    team: 4,
-    budget: 500000,
-    spent: 325000,
-    startDate: "2026-01-01",
-    deadline: "2026-01-25",
-    location: "Kilimani, Nairobi",
-  },
-  {
-    id: 2,
-    name: "Westlands Office Network",
-    customer: "Smith Enterprises",
-    email: "info@smith.co.ke",
-    phone: "+254700000002",
-    type: "wireless",
-    status: "planning",
-    priority: "medium",
-    progress: 15,
-    team: 2,
-    budget: 350000,
-    spent: 52500,
-    startDate: "2026-01-15",
-    deadline: "2026-02-10",
-    location: "Westlands, Nairobi",
-  },
-  {
-    id: 3,
-    name: "CBD Hotspot Deployment",
-    customer: "City Mall",
-    email: "tech@citymall.co.ke",
-    phone: "+254700000003",
-    type: "hotspot",
-    status: "in_progress",
-    priority: "critical",
-    progress: 80,
-    team: 3,
-    budget: 200000,
-    spent: 160000,
-    startDate: "2025-12-20",
-    deadline: "2026-01-18",
-    location: "CBD, Nairobi",
-  },
-  {
-    id: 4,
-    name: "Karen Estate PPOE Setup",
-    customer: "Karen Residences",
-    email: "admin@karenres.co.ke",
-    phone: "+254700000004",
-    type: "ppoe",
-    status: "completed",
-    priority: "medium",
-    progress: 100,
-    team: 5,
-    budget: 750000,
-    spent: 720000,
-    startDate: "2025-11-15",
-    deadline: "2026-01-08",
-    location: "Karen, Nairobi",
-  },
-  {
-    id: 5,
-    name: "Industrial Area Hybrid Network",
-    customer: "Mombasa Cement",
-    email: "it@mombcement.co.ke",
-    phone: "+254700000005",
-    type: "hybrid",
-    status: "on_hold",
-    priority: "low",
-    progress: 40,
-    team: 6,
-    budget: 1200000,
-    spent: 480000,
-    startDate: "2025-12-01",
-    deadline: "2026-03-01",
-    location: "Industrial Area, Nairobi",
-  },
-];
-
-const statusStyles = {
+const statusStyles: Record<string, string> = {
   planning: "bg-warning/10 text-warning border-warning/20",
   in_progress: "bg-primary/10 text-primary border-primary/20",
   completed: "bg-success/10 text-success border-success/20",
@@ -137,23 +33,31 @@ const statusStyles = {
   cancelled: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
-const typeStyles = {
+const typeStyles: Record<string, string> = {
   fiber: "bg-chart-1/10 text-chart-1",
   wireless: "bg-chart-2/10 text-chart-2",
   ppoe: "bg-chart-3/10 text-chart-3",
   hotspot: "bg-chart-4/10 text-chart-4",
   hybrid: "bg-chart-5/10 text-chart-5",
-};
-
-const priorityStyles = {
-  low: "text-muted-foreground",
-  medium: "text-primary",
-  high: "text-warning",
-  critical: "text-destructive",
+  network_infrastructure: "bg-primary/10 text-primary",
 };
 
 export default function Projects() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filters: ProjectsFilters = {};
+  if (statusFilter !== "all") filters.status = statusFilter;
+  if (typeFilter !== "all") filters.infrastructure_type = typeFilter;
+
+  const { data: projects, isLoading, error, refetch } = useProjects(filters);
+
+  const filteredProjects = (projects || []).filter((project) =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <DashboardLayout title="Projects" subtitle="Manage infrastructure deployments">
@@ -164,10 +68,12 @@ export default function Projects() {
           <Input
             placeholder="Search projects..."
             className="pl-10 bg-secondary border-border"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-2">
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-40 bg-secondary border-border">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -179,7 +85,7 @@ export default function Projects() {
               <SelectItem value="on_hold">On Hold</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-40 bg-secondary border-border">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -216,90 +122,82 @@ export default function Projects() {
       </div>
 
       {/* Projects Grid */}
-      <div
-        className={cn(
-          "grid gap-6",
-          viewMode === "grid"
-            ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-            : "grid-cols-1"
-        )}
-      >
-        {projects.map((project, index) => (
-          <div
-            key={project.id}
-            className="glass rounded-xl p-6 hover:shadow-glow hover:border-primary/30 transition-all duration-300 animate-fade-in"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge className={cn("text-xs", typeStyles[project.type])}>
-                    {project.type.toUpperCase()}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={cn("text-xs", statusStyles[project.status])}
-                  >
-                    {project.status.replace("_", " ")}
-                  </Badge>
+      {isLoading ? (
+        <div className={cn("grid gap-6", viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1")}>
+          <LoadingSkeleton variant="card" count={6} />
+        </div>
+      ) : error ? (
+        <ErrorState message="Failed to load projects" onRetry={() => refetch()} />
+      ) : filteredProjects.length === 0 ? (
+        <div className="glass rounded-xl p-12 text-center">
+          <p className="text-muted-foreground">No projects found</p>
+        </div>
+      ) : (
+        <div className={cn("grid gap-6", viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1")}>
+          {filteredProjects.map((project, index) => (
+            <div
+              key={project.id}
+              className="glass rounded-xl p-6 hover:shadow-glow hover:border-primary/30 transition-all duration-300 animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className={cn("text-xs", typeStyles[project.infrastructure_type] || typeStyles.fiber)}>
+                      {project.infrastructure_type?.toUpperCase() || "N/A"}
+                    </Badge>
+                    <Badge variant="outline" className={cn("text-xs", statusStyles[project.status] || statusStyles.planning)}>
+                      {project.status?.replace("_", " ") || "Unknown"}
+                    </Badge>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">{project.name}</h3>
+                  <p className="text-sm text-muted-foreground">{project.customer_name}</p>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-1">
-                  {project.name}
-                </h3>
-                <p className="text-sm text-muted-foreground">{project.customer}</p>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
               </div>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </div>
 
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>{project.location}</span>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  <span>{project.team} members</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{new Date(project.deadline).toLocaleDateString()}</span>
+              <div className="space-y-3 mb-4">
+                {project.location && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    <span>{project.location}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    <span>{project.team_size || 0} members</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    <span>{project.end_date ? new Date(project.end_date).toLocaleDateString() : "No deadline"}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Progress */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Progress</span>
-                <span className="font-medium text-foreground">{project.progress}%</span>
+              <div className="mb-4">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-medium text-foreground">{project.progress || 0}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full rounded-full gradient-primary transition-all duration-500" style={{ width: `${project.progress || 0}%` }} />
+                </div>
               </div>
-              <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                <div
-                  className="h-full rounded-full gradient-primary transition-all duration-500"
-                  style={{ width: `${project.progress}%` }}
-                />
-              </div>
-            </div>
 
-            {/* Budget */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Budget</span>
-              <div className="text-right">
-                <span className="font-medium text-foreground">
-                  KES {project.spent.toLocaleString()}
-                </span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  / {project.budget.toLocaleString()}
-                </span>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Budget</span>
+                <div className="text-right">
+                  <span className="font-medium text-foreground">KES {(project.spent || 0).toLocaleString()}</span>
+                  <span className="text-muted-foreground"> / {(project.budget || 0).toLocaleString()}</span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </DashboardLayout>
   );
 }
