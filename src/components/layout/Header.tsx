@@ -1,6 +1,7 @@
 import { Bell, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { HealthIndicator } from "@/components/layout/HealthIndicator";
 
 interface HeaderProps {
   title: string;
@@ -16,6 +17,9 @@ export function Header({ title, subtitle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Health Status Indicator */}
+        <HealthIndicator />
+
         {/* Search */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

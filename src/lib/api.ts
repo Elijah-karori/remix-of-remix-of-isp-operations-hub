@@ -236,3 +236,70 @@ export const rbacApi = {
     apiFetch("/api/v1/rbac/check-batch", { method: "POST", body: JSON.stringify({ permissions }) }),
   myPermissions: () => apiFetch("/api/v1/rbac/my-permissions"),
 };
+
+// Health check endpoints
+export interface HealthStatus {
+  status: "healthy" | "unhealthy" | "checking";
+  latency?: number;
+  timestamp?: string;
+  error?: string;
+}
+
+export const healthApi = {
+  check: async (): Promise<HealthStatus> => {
+    const startTime = Date.now();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(`${API_BASE_URL}/api/v1/health`, {
+        method: "GET",
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      const latency = Date.now() - startTime;
+      
+      if (response.ok) {
+        return {
+          status: "healthy",
+          latency,
+          timestamp: new Date().toISOString(),
+        };
+      } else {
+        return {
+          status: "unhealthy",
+          latency,
+          timestamp: new Date().toISOString(),
+          error: `HTTP ${response.status}`,
+        };
+      }
+    } catch (error) {
+      return {
+        status: "unhealthy",
+        latency: Date.now() - startTime,
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Connection failed",
+      };
+    }
+  },
+  
+  ping: async (): Promise<{ reachable: boolean; latency: number }> => {
+    const startTime = Date.now();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      await fetch(`${API_BASE_URL}/api/v1/`, {
+        method: "HEAD",
+        mode: "no-cors",
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      return { reachable: true, latency: Date.now() - startTime };
+    } catch {
+      return { reachable: false, latency: Date.now() - startTime };
+    }
+  },
+};
