@@ -1,4 +1,15 @@
 import { QueryClient } from "@tanstack/react-query";
+import { getDemoMode } from "./demo-mode";
+import {
+  DEMO_USER,
+  DEMO_PERMISSIONS,
+  DEMO_PROJECTS,
+  DEMO_TASKS,
+  DEMO_INVENTORY,
+  DEMO_FINANCE,
+  DEMO_DASHBOARD,
+  delay,
+} from "./mock-data";
 
 export const API_BASE_URL = "http://erp.gygaview.co.ke";
 
@@ -43,9 +54,16 @@ export async function apiFetch<T>(
   return response.json();
 }
 
-// Auth endpoints
+// Auth endpoints with demo mode support
 export const authApi = {
   login: async (email: string, password: string) => {
+    if (getDemoMode()) {
+      await delay(500);
+      // Accept any credentials in demo mode
+      setAccessToken("demo_token_" + Date.now());
+      return { access_token: "demo_token", token_type: "bearer" };
+    }
+
     const formData = new URLSearchParams();
     formData.append("username", email);
     formData.append("password", password);
@@ -67,36 +85,77 @@ export const authApi = {
   },
 
   register: async (data: { email: string; full_name: string; phone: string; password: string }) => {
+    if (getDemoMode()) {
+      await delay(500);
+      return { message: "Registration successful (demo mode)" };
+    }
     return apiFetch("/api/v1/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  me: async () => apiFetch("/api/v1/auth/me"),
+  me: async () => {
+    if (getDemoMode()) {
+      await delay(200);
+      return DEMO_USER;
+    }
+    return apiFetch("/api/v1/auth/me");
+  },
 
   logout: () => setAccessToken(null),
 };
 
-// Projects endpoints
+// Projects endpoints with demo mode support
 export const projectsApi = {
-  list: (params?: { status?: string; infrastructure_type?: string; department_id?: number }) => {
+  list: async (params?: { status?: string; infrastructure_type?: string; department_id?: number }) => {
+    if (getDemoMode()) {
+      await delay(300);
+      let projects = [...DEMO_PROJECTS];
+      if (params?.status) projects = projects.filter((p) => p.status === params.status);
+      if (params?.infrastructure_type) projects = projects.filter((p) => p.infrastructure_type === params.infrastructure_type);
+      return projects;
+    }
     const searchParams = new URLSearchParams();
     if (params?.status) searchParams.append("status", params.status);
     if (params?.infrastructure_type) searchParams.append("infrastructure_type", params.infrastructure_type);
     if (params?.department_id) searchParams.append("department_id", String(params.department_id));
     return apiFetch(`/api/v1/projects/?${searchParams}`);
   },
-  get: (id: number) => apiFetch(`/api/v1/projects/${id}`),
+  get: async (id: number) => {
+    if (getDemoMode()) {
+      await delay(200);
+      return DEMO_PROJECTS.find((p) => p.id === id) || DEMO_PROJECTS[0];
+    }
+    return apiFetch(`/api/v1/projects/${id}`);
+  },
   create: (data: any) => apiFetch("/api/v1/projects/", { method: "POST", body: JSON.stringify(data) }),
   update: (id: number, data: any) => apiFetch(`/api/v1/projects/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 };
 
-// Tasks endpoints
+// Tasks endpoints with demo mode support
 export const tasksApi = {
-  list: () => apiFetch("/api/v1/tasks/"),
-  myAssignments: () => apiFetch("/api/v1/tasks/my-assignments"),
-  get: (id: number) => apiFetch(`/api/v1/tasks/${id}`),
+  list: async () => {
+    if (getDemoMode()) {
+      await delay(300);
+      return DEMO_TASKS;
+    }
+    return apiFetch("/api/v1/tasks/");
+  },
+  myAssignments: async () => {
+    if (getDemoMode()) {
+      await delay(200);
+      return DEMO_TASKS.filter((t) => t.assigned_to === 1);
+    }
+    return apiFetch("/api/v1/tasks/my-assignments");
+  },
+  get: async (id: number) => {
+    if (getDemoMode()) {
+      await delay(200);
+      return DEMO_TASKS.find((t) => t.id === id) || DEMO_TASKS[0];
+    }
+    return apiFetch(`/api/v1/tasks/${id}`);
+  },
   create: (data: any) => apiFetch("/api/v1/tasks/", { method: "POST", body: JSON.stringify(data) }),
   update: (id: number, data: any) => apiFetch(`/api/v1/tasks/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   logHours: (id: number, hours: number, notes?: string) =>
@@ -141,13 +200,37 @@ export const mpesaApi = {
     }),
 };
 
-// Inventory endpoints
+// Inventory endpoints with demo mode support
 export const inventoryApi = {
-  products: () => apiFetch("/api/v1/inventory/products"),
-  product: (id: number) => apiFetch(`/api/v1/inventory/products/${id}`),
+  products: async () => {
+    if (getDemoMode()) {
+      await delay(300);
+      return DEMO_INVENTORY.products;
+    }
+    return apiFetch("/api/v1/inventory/products");
+  },
+  product: async (id: number) => {
+    if (getDemoMode()) {
+      await delay(200);
+      return DEMO_INVENTORY.products.find((p) => p.id === id) || DEMO_INVENTORY.products[0];
+    }
+    return apiFetch(`/api/v1/inventory/products/${id}`);
+  },
   createProduct: (data: any) => apiFetch("/api/v1/inventory/products", { method: "POST", body: JSON.stringify(data) }),
-  suppliers: (activeOnly = true) => apiFetch(`/api/v1/inventory/suppliers?active_only=${activeOnly}`),
-  lowStock: (thresholdMultiplier = 1.5) => apiFetch(`/api/v1/inventory/low-stock?threshold_multiplier=${thresholdMultiplier}`),
+  suppliers: async (activeOnly = true) => {
+    if (getDemoMode()) {
+      await delay(200);
+      return activeOnly ? DEMO_INVENTORY.suppliers.filter((s) => s.is_active) : DEMO_INVENTORY.suppliers;
+    }
+    return apiFetch(`/api/v1/inventory/suppliers?active_only=${activeOnly}`);
+  },
+  lowStock: async (thresholdMultiplier = 1.5) => {
+    if (getDemoMode()) {
+      await delay(200);
+      return DEMO_INVENTORY.lowStock;
+    }
+    return apiFetch(`/api/v1/inventory/low-stock?threshold_multiplier=${thresholdMultiplier}`);
+  },
   searchProducts: (query: string, useScrapers = false, maxResults = 50) =>
     apiFetch(`/api/v1/products/search?q=${encodeURIComponent(query)}&use_scrapers=${useScrapers}&max_results=${maxResults}`),
   comparePrices: (productName: string, quantity: number) =>
@@ -194,12 +277,36 @@ export const crmApi = {
   logActivity: (data: any) => apiFetch("/api/v1/crm/activities", { method: "POST", body: JSON.stringify(data) }),
 };
 
-// Dashboard endpoints
+// Dashboard endpoints with demo mode support
 export const dashboardApi = {
-  projectsOverview: () => apiFetch("/api/v1/dashboards/projects-overview"),
-  taskAllocation: () => apiFetch("/api/v1/dashboards/task-allocation"),
-  budgetTracking: () => apiFetch("/api/v1/dashboards/budget-tracking"),
-  teamWorkload: () => apiFetch("/api/v1/dashboards/team-workload"),
+  projectsOverview: async () => {
+    if (getDemoMode()) {
+      await delay(300);
+      return DEMO_DASHBOARD.projectsOverview;
+    }
+    return apiFetch("/api/v1/dashboards/projects-overview");
+  },
+  taskAllocation: async () => {
+    if (getDemoMode()) {
+      await delay(200);
+      return DEMO_DASHBOARD.taskAllocation;
+    }
+    return apiFetch("/api/v1/dashboards/task-allocation");
+  },
+  budgetTracking: async () => {
+    if (getDemoMode()) {
+      await delay(300);
+      return DEMO_FINANCE.budgetTracking;
+    }
+    return apiFetch("/api/v1/dashboards/budget-tracking");
+  },
+  teamWorkload: async () => {
+    if (getDemoMode()) {
+      await delay(200);
+      return DEMO_DASHBOARD.teamWorkload;
+    }
+    return apiFetch("/api/v1/dashboards/team-workload");
+  },
   departmentOverview: (departmentId: number) => apiFetch(`/api/v1/dashboards/department/${departmentId}/overview`),
 };
 
@@ -229,12 +336,29 @@ export const auditApi = {
   export: (format = "csv", days = 30) => apiFetch(`/api/v1/audit/export?format=${format}&days=${days}`),
 };
 
-// RBAC endpoints
+// RBAC endpoints with demo mode support
 export const rbacApi = {
-  checkPermission: (permission: string) => apiFetch(`/api/v1/rbac/check?permission=${encodeURIComponent(permission)}`),
-  checkBatch: (permissions: string[]) =>
-    apiFetch("/api/v1/rbac/check-batch", { method: "POST", body: JSON.stringify({ permissions }) }),
-  myPermissions: () => apiFetch("/api/v1/rbac/my-permissions"),
+  checkPermission: async (permission: string) => {
+    if (getDemoMode()) {
+      await delay(100);
+      return { allowed: DEMO_PERMISSIONS.includes(permission) };
+    }
+    return apiFetch(`/api/v1/rbac/check?permission=${encodeURIComponent(permission)}`);
+  },
+  checkBatch: async (permissions: string[]) => {
+    if (getDemoMode()) {
+      await delay(100);
+      return { results: permissions.map((p) => ({ permission: p, allowed: DEMO_PERMISSIONS.includes(p) })) };
+    }
+    return apiFetch("/api/v1/rbac/check-batch", { method: "POST", body: JSON.stringify({ permissions }) });
+  },
+  myPermissions: async () => {
+    if (getDemoMode()) {
+      await delay(100);
+      return { permissions: DEMO_PERMISSIONS };
+    }
+    return apiFetch("/api/v1/rbac/my-permissions");
+  },
 };
 
 // Health check endpoints
