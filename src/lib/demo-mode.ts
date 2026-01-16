@@ -27,26 +27,34 @@ export const checkBackendAndSetDemoMode = async (backendUrl: string): Promise<bo
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    const response = await fetch(`${backendUrl}/api/v1/health`, {
-      method: "GET",
+    // Try OPTIONS request to check CORS availability (doesn't require auth)
+    const response = await fetch(`${backendUrl}/api/v1/rbac/my-permissions`, {
+      method: "OPTIONS",
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
     
-    if (response.ok) {
-      setDemoMode(false);
-      return false;
-    } else {
-      setDemoMode(true);
-      return true;
-    }
-  } catch {
+    // If we get any response (even 401/405), backend is reachable
+    setDemoMode(false);
+    console.log("✅ Backend reachable at", backendUrl);
+    return false;
+  } catch (error) {
+    // Network error means backend is unreachable - enable demo mode
+    console.log("⚠️ Backend unreachable, enabling demo mode:", error);
     setDemoMode(true);
     return true;
   }
+};
+
+// Force disable demo mode (for when user wants to connect to real backend)
+export const forceDisableDemoMode = () => {
+  isDemoMode = false;
+  demoModeChecked = true;
+  localStorage.removeItem("demo_mode");
+  console.log("🔌 Demo mode disabled - attempting real backend connection");
 };
 
 export const clearDemoMode = () => {
