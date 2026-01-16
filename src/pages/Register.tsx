@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, UserPlus, AlertCircle, CheckCircle2, FlaskConical } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, UserPlus, AlertCircle, CheckCircle2, FlaskConical, Mail, Lock } from "lucide-react";
 import { getDemoMode } from "@/lib/demo-mode";
 
 export default function Register() {
@@ -20,6 +21,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("password");
   const isDemoMode = getDemoMode();
 
   const navigate = useNavigate();
@@ -28,7 +30,8 @@ export default function Register() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Password-based registration
+  const handlePasswordRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -46,18 +49,47 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      await authApi.register({
+      const response = await authApi.register({
         email: formData.email,
         full_name: formData.full_name,
         phone: formData.phone || undefined,
         password: formData.password,
       });
+      console.log("Registration response:", response);
       setSuccess(true);
       
       // Redirect to login after 2 seconds
-      setTimeout(() => navigate("/login"), 2000);
+      setTimeout(() => navigate("/login", { state: { message: "Account created successfully! Please login." } }), 2000);
     } catch (err: any) {
+      console.error("Registration failed:", err);
       setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // OTP-based registration (passwordless)
+  const handleOTPRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      await authApi.requestRegistrationOTP(
+        formData.email,
+        formData.full_name,
+        formData.phone || undefined
+      );
+      console.log("OTP registration requested for:", formData.email);
+      navigate("/verify-otp", { 
+        state: { 
+          email: formData.email, 
+          type: "registration" 
+        } 
+      });
+    } catch (err: any) {
+      console.error("OTP registration request failed:", err);
+      setError(err.message || "Failed to send verification code. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +127,7 @@ export default function Register() {
             <AlertDescription className="text-purple-600 dark:text-purple-400">
               <span className="font-medium">Demo Mode</span>
               <p className="text-sm mt-1 text-muted-foreground">
-                Registration will create a simulated account.
+                Registration will create a simulated account. Use OTP code: 123456
               </p>
             </AlertDescription>
           </Alert>
@@ -108,98 +140,176 @@ export default function Register() {
             </div>
             <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
             <CardDescription>
-              Enter your details to register for the ERP system
+              Choose how you want to register
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="password" className="flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  With Password
+                </TabsTrigger>
+                <TabsTrigger value="otp" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  With OTP
+                </TabsTrigger>
+              </TabsList>
+
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="mb-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name</Label>
-                <Input
-                  id="full_name"
-                  name="full_name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+              <TabsContent value="password">
+                <form onSubmit={handlePasswordRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                      id="full_name"
+                      name="full_name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={formData.full_name}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="name@company.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="name@company.com"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone (Optional)</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="+254 700 000 000"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone (Optional)</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="+254 700 000 000"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  "Create account"
-                )}
-              </Button>
-            </form>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Create account"
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="otp">
+                <form onSubmit={handleOTPRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="otp_full_name">Full Name</Label>
+                    <Input
+                      id="otp_full_name"
+                      name="full_name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={formData.full_name}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="otp_email">Email</Label>
+                    <Input
+                      id="otp_email"
+                      name="email"
+                      type="email"
+                      placeholder="name@company.com"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="otp_phone">Phone (Optional)</Label>
+                    <Input
+                      id="otp_phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="+254 700 000 000"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">
+                    We'll send a 6-digit verification code to your email. No password needed!
+                  </p>
+
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending code...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Send Verification Code
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
             <div className="text-center text-sm text-muted-foreground">

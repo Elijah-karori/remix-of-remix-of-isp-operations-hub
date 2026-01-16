@@ -119,12 +119,123 @@ export const authApi = {
     });
   },
 
+  // OTP-based registration
+  requestRegistrationOTP: async (email: string, full_name?: string, phone?: string) => {
+    if (getDemoMode()) {
+      await delay(500);
+      console.log("Demo: OTP sent to", email);
+      return { message: "OTP sent to your email (demo mode)" };
+    }
+    return apiFetch("/api/v1/auth/register/otp/request", {
+      method: "POST",
+      body: JSON.stringify({ email, full_name, phone }),
+    });
+  },
+
+  verifyRegistrationOTP: async (email: string, otp: string) => {
+    if (getDemoMode()) {
+      await delay(500);
+      if (otp === "123456") {
+        setAccessToken("demo_token_" + Date.now());
+        return { message: "Account verified (demo mode)", access_token: "demo_token" };
+      }
+      throw new Error("Invalid OTP code");
+    }
+    const response = await apiFetch<{ access_token?: string; message?: string }>("/api/v1/auth/register/otp/verify", {
+      method: "POST",
+      body: JSON.stringify({ email, otp }),
+    });
+    if (response.access_token) {
+      setAccessToken(response.access_token);
+    }
+    return response;
+  },
+
+  // Passwordless login (Magic Link)
+  requestPasswordlessLogin: async (email: string) => {
+    if (getDemoMode()) {
+      await delay(500);
+      console.log("Demo: Magic link sent to", email);
+      return { message: "Login code sent to your email (demo mode)" };
+    }
+    return apiFetch("/api/v1/auth/passwordless/request", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  verifyPasswordlessOTP: async (email: string, otp: string) => {
+    if (getDemoMode()) {
+      await delay(500);
+      if (otp === "123456") {
+        setAccessToken("demo_token_" + Date.now());
+        return { message: "Login successful (demo mode)", access_token: "demo_token" };
+      }
+      throw new Error("Invalid or expired code");
+    }
+    const response = await apiFetch<{ access_token: string; token_type: string }>("/api/v1/auth/passwordless/verify", {
+      method: "POST",
+      body: JSON.stringify({ email, otp }),
+    });
+    setAccessToken(response.access_token);
+    return response;
+  },
+
+  // Password reset
+  requestPasswordReset: async (email: string) => {
+    if (getDemoMode()) {
+      await delay(500);
+      console.log("Demo: Password reset code sent to", email);
+      return { message: "Reset code sent to your email (demo mode)" };
+    }
+    return apiFetch("/api/v1/auth/password-reset/request", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword: async (email: string, otp: string, newPassword: string) => {
+    if (getDemoMode()) {
+      await delay(500);
+      if (otp === "123456") {
+        return { message: "Password reset successful (demo mode)" };
+      }
+      throw new Error("Invalid or expired reset code");
+    }
+    return apiFetch("/api/v1/auth/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify({ email, otp, new_password: newPassword }),
+    });
+  },
+
   me: async () => {
     if (getDemoMode()) {
       await delay(200);
       return DEMO_USER;
     }
     return apiFetch("/api/v1/auth/me");
+  },
+
+  updateProfile: async (data: { full_name?: string; phone?: string }) => {
+    if (getDemoMode()) {
+      await delay(300);
+      return { ...DEMO_USER, ...data };
+    }
+    return apiFetch("/api/v1/auth/me", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    if (getDemoMode()) {
+      await delay(300);
+      return { message: "Password changed (demo mode)" };
+    }
+    return apiFetch("/api/v1/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
   },
 
   refresh: async () => {
