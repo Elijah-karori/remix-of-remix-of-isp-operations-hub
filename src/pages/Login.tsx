@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, LogIn, AlertCircle, FlaskConical, Info } from "lucide-react";
+import { Loader2, LogIn, AlertCircle, FlaskConical, Info, Sparkles, CheckCircle2 } from "lucide-react";
 import { getDemoMode } from "@/lib/demo-mode";
 
 export default function Login() {
@@ -21,6 +21,7 @@ export default function Login() {
   const location = useLocation();
 
   const from = location.state?.from?.pathname || "/";
+  const successMessage = location.state?.message;
 
   // Check demo mode status
   useEffect(() => {
@@ -40,9 +41,12 @@ export default function Login() {
     setIsLoading(true);
 
     try {
+      console.log("Attempting login for:", email);
       await login(email, password);
+      console.log("Login successful, navigating to:", from);
       navigate(from, { replace: true });
     } catch (err: any) {
+      console.error("Login failed:", err);
       setError(err.message || "Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
@@ -68,6 +72,15 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <div className="w-full max-w-md space-y-4">
+        {successMessage && (
+          <Alert className="bg-green-500/10 border-green-500/30">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <AlertDescription className="text-green-600 dark:text-green-400">
+              {successMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {isDemoMode && (
           <Alert className="bg-purple-500/10 border-purple-500/30">
             <FlaskConical className="h-4 w-4 text-purple-500" />
@@ -113,7 +126,15 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -136,18 +157,31 @@ export default function Login() {
                 )}
               </Button>
 
+              {/* Passwordless option */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    or
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate("/passwordless")}
+                disabled={isLoading}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Sign in without password
+              </Button>
+
               {isDemoMode && (
                 <div className="pt-2 space-y-2">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">
-                        or
-                      </span>
-                    </div>
-                  </div>
                   <Button
                     type="button"
                     variant="outline"
