@@ -6,34 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, LogIn, AlertCircle, FlaskConical, Info, Sparkles, CheckCircle2 } from "lucide-react";
-import { getDemoMode } from "@/lib/demo-mode";
+import { Loader2, LogIn, AlertCircle, Sparkles, CheckCircle2 } from "lucide-react";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
 
-  const { login, isLoading: authLoading } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || "/";
   const successMessage = location.state?.message;
-
-  // Check demo mode status
-  useEffect(() => {
-    const checkDemoMode = () => {
-      setIsDemoMode(getDemoMode());
-    };
-    
-    // Check immediately and after a short delay (for initial load)
-    checkDemoMode();
-    const timer = setTimeout(checkDemoMode, 1000);
-    return () => clearTimeout(timer);
-  }, [authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,22 +40,6 @@ export default function Login() {
     }
   };
 
-  const handleDemoLogin = async () => {
-    setEmail("demo@example.com");
-    setPassword("demo123");
-    setError("");
-    setIsLoading(true);
-
-    try {
-      await login("demo@example.com", "demo123");
-      navigate(from, { replace: true });
-    } catch (err: any) {
-      setError(err.message || "Demo login failed.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <div className="w-full max-w-md space-y-4">
@@ -77,18 +48,6 @@ export default function Login() {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
             <AlertDescription className="text-green-600 dark:text-green-400">
               {successMessage}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {isDemoMode && (
-          <Alert className="bg-purple-500/10 border-purple-500/30">
-            <FlaskConical className="h-4 w-4 text-purple-500" />
-            <AlertDescription className="text-purple-600 dark:text-purple-400">
-              <span className="font-medium">Demo Mode Active</span>
-              <p className="text-sm mt-1 text-muted-foreground">
-                Backend is unreachable. Using mock data for UI testing.
-              </p>
             </AlertDescription>
           </Alert>
         )}
@@ -128,8 +87,8 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link 
-                    to="/forgot-password" 
+                  <Link
+                    to="/forgot-password"
                     className="text-sm text-primary hover:underline"
                   >
                     Forgot password?
@@ -179,25 +138,6 @@ export default function Login() {
                 <Sparkles className="mr-2 h-4 w-4" />
                 Sign in without password
               </Button>
-
-              {isDemoMode && (
-                <div className="pt-2 space-y-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full border-purple-500/30 hover:bg-purple-500/10"
-                    onClick={handleDemoLogin}
-                    disabled={isLoading}
-                  >
-                    <FlaskConical className="mr-2 h-4 w-4 text-purple-500" />
-                    Quick Demo Login
-                  </Button>
-                  <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-                    <Info className="h-3 w-3" />
-                    Any credentials work in demo mode
-                  </p>
-                </div>
-              )}
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">

@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, UserPlus, AlertCircle, CheckCircle2, FlaskConical, Mail, Lock } from "lucide-react";
-import { getDemoMode } from "@/lib/demo-mode";
+import { Loader2, UserPlus, AlertCircle, CheckCircle2, Mail, Lock } from "lucide-react";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -22,7 +21,6 @@ export default function Register() {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("password");
-  const isDemoMode = getDemoMode();
 
   const navigate = useNavigate();
 
@@ -57,7 +55,7 @@ export default function Register() {
       });
       console.log("Registration response:", response);
       setSuccess(true);
-      
+
       // Redirect to login after 2 seconds
       setTimeout(() => navigate("/login", { state: { message: "Account created successfully! Please login." } }), 2000);
     } catch (err: any) {
@@ -81,11 +79,11 @@ export default function Register() {
         formData.phone || undefined
       );
       console.log("OTP registration requested for:", formData.email);
-      navigate("/verify-otp", { 
-        state: { 
-          email: formData.email, 
-          type: "registration" 
-        } 
+      navigate("/verify-otp", {
+        state: {
+          email: formData.email,
+          type: "registration"
+        }
       });
     } catch (err: any) {
       console.error("OTP registration request failed:", err);
@@ -106,10 +104,7 @@ export default function Register() {
               </div>
               <h2 className="text-xl font-semibold">Registration Successful!</h2>
               <p className="text-muted-foreground">
-                {isDemoMode 
-                  ? "Demo account created. Redirecting to login..."
-                  : "Your account has been created. Redirecting to login..."
-                }
+                Your account has been created. Redirecting to login...
               </p>
             </div>
           </CardContent>
@@ -121,18 +116,6 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <div className="w-full max-w-md space-y-4">
-        {isDemoMode && (
-          <Alert className="bg-purple-500/10 border-purple-500/30">
-            <FlaskConical className="h-4 w-4 text-purple-500" />
-            <AlertDescription className="text-purple-600 dark:text-purple-400">
-              <span className="font-medium">Demo Mode</span>
-              <p className="text-sm mt-1 text-muted-foreground">
-                Registration will create a simulated account. Use OTP code: 123456
-              </p>
-            </AlertDescription>
-          </Alert>
-        )}
-
         <Card className="shadow-xl">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">

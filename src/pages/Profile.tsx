@@ -10,12 +10,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Loader2, 
-  User, 
-  Lock, 
-  Shield, 
-  AlertCircle, 
+import {
+  Loader2,
+  User,
+  Lock,
+  Shield,
+  AlertCircle,
   CheckCircle2,
   Mail,
   Phone,
@@ -24,22 +24,22 @@ import {
 import { toast } from "@/hooks/use-toast";
 
 export default function Profile() {
-  const { user, permissions, refreshUser, isDemoMode } = useAuth();
-  
+  const { user, permissions, refreshUser } = useAuth();
+
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  
+
   const [profileData, setProfileData] = useState({
     full_name: user?.full_name || "",
     phone: user?.phone || "",
   });
-  
+
   const [passwordData, setPasswordData] = useState({
     current_password: "",
     new_password: "",
     confirm_password: "",
   });
-  
+
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState("");
@@ -199,7 +199,7 @@ export default function Profile() {
                       <AlertDescription>{profileError}</AlertDescription>
                     </Alert>
                   )}
-                  
+
                   {profileSuccess && (
                     <Alert className="bg-green-500/10 border-green-500/30">
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -216,7 +216,7 @@ export default function Profile() {
                         id="full_name"
                         value={profileData.full_name}
                         onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                        disabled={isUpdatingProfile || isDemoMode}
+                        disabled={isUpdatingProfile}
                       />
                     </div>
                     <div className="space-y-2">
@@ -228,14 +228,14 @@ export default function Profile() {
                           type="tel"
                           value={profileData.phone}
                           onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                          disabled={isUpdatingProfile || isDemoMode}
+                          disabled={isUpdatingProfile}
                           className="pl-10"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <Button type="submit" disabled={isUpdatingProfile || isDemoMode}>
+                  <Button type="submit" disabled={isUpdatingProfile}>
                     {isUpdatingProfile ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -269,7 +269,7 @@ export default function Profile() {
                       <AlertDescription>{passwordError}</AlertDescription>
                     </Alert>
                   )}
-                  
+
                   {passwordSuccess && (
                     <Alert className="bg-green-500/10 border-green-500/30">
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -288,12 +288,12 @@ export default function Profile() {
                         value={passwordData.current_password}
                         onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
                         required
-                        disabled={isChangingPassword || isDemoMode}
+                        disabled={isChangingPassword}
                       />
                     </div>
-                    
+
                     <Separator />
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="new_password">New Password</Label>
                       <Input
@@ -302,10 +302,10 @@ export default function Profile() {
                         value={passwordData.new_password}
                         onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
                         required
-                        disabled={isChangingPassword || isDemoMode}
+                        disabled={isChangingPassword}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="confirm_password">Confirm New Password</Label>
                       <Input
@@ -314,12 +314,12 @@ export default function Profile() {
                         value={passwordData.confirm_password}
                         onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
                         required
-                        disabled={isChangingPassword || isDemoMode}
+                        disabled={isChangingPassword}
                       />
                     </div>
                   </div>
 
-                  <Button type="submit" disabled={isChangingPassword || isDemoMode}>
+                  <Button type="submit" disabled={isChangingPassword}>
                     {isChangingPassword ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

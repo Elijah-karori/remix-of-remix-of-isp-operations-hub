@@ -1,27 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { authApi, getAccessToken, setAccessToken, rbacApi, API_BASE_URL } from "@/lib/api";
-import { checkBackendAndSetDemoMode, getDemoMode, clearDemoMode } from "@/lib/demo-mode";
+import { authApi, getAccessToken, setAccessToken, rbacApi } from "@/lib/api";
+import { UserOut } from "@/types/api";
 
-interface User {
-  id: number;
-  email: string;
-  full_name: string;
-  phone?: string;
-  is_active: boolean;
-  department_id?: number;
-}
+// Local alias if needed, or just use UserOut
+type User = UserOut;
+
 
 interface AuthContextType {
   user: User | null;
   permissions: string[];
   isLoading: boolean;
   isAuthenticated: boolean;
-  isDemoMode: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   refreshUser: () => Promise<void>;
-  exitDemoMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,7 +23,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const fetchUserAndPermissions = useCallback(async () => {
     const token = getAccessToken();
@@ -48,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPermissions(permissionsData.permissions || []);
     } catch (error) {
       console.error("Failed to fetch user:", error);
-      
+
       // Handle auth errors
       if (error instanceof Error) {
         if (error.message.includes("Session expired") || error.message.includes("401")) {
@@ -62,19 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Check backend availability and set demo mode on mount
+  // Fetch user and permissions on mount
   useEffect(() => {
-    const initializeApp = async () => {
-      const isDemo = await checkBackendAndSetDemoMode(API_BASE_URL);
-      setIsDemoMode(isDemo);
-      await fetchUserAndPermissions();
-    };
-    initializeApp();
+    fetchUserAndPermissions();
   }, [fetchUserAndPermissions]);
 
   const login = async (email: string, password: string) => {
     await authApi.login(email, password);
-    setIsDemoMode(getDemoMode());
     await fetchUserAndPermissions();
   };
 
@@ -82,13 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authApi.logout();
     setUser(null);
     setPermissions([]);
-  };
-
-  const exitDemoMode = () => {
-    clearDemoMode();
-    setIsDemoMode(false);
-    logout();
-    window.location.reload();
   };
 
   const hasPermission = (permission: string) => {
@@ -106,12 +85,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         permissions,
         isLoading,
         isAuthenticated: !!user,
-        isDemoMode,
         login,
         logout,
         hasPermission,
         refreshUser,
-        exitDemoMode,
       }}
     >
       {children}
