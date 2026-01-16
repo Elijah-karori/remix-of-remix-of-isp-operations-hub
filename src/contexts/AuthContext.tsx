@@ -34,10 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const [userData, permissionsData] = await Promise.all([
         authApi.me() as Promise<User>,
-        rbacApi.myPermissions() as Promise<{ permissions: string[] }>,
+        rbacApi.myPermissions() as Promise<{ permissions: { codename: string }[] }>,
       ]);
       setUser(userData);
-      setPermissions(permissionsData.permissions || []);
+      // Map PermissionDetail objects to codename strings
+      setPermissions(permissionsData.permissions.map((p) => p.codename));
     } catch (error) {
       console.error("Failed to fetch user:", error);
 

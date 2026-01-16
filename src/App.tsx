@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import PasswordlessLogin from "./pages/PasswordlessLogin";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import VerifyMagicLink from "./pages/VerifyMagicLink";
 
 const queryClient = new QueryClient();
 
@@ -36,7 +37,8 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/passwordless" element={<PasswordlessLogin />} />
-            
+            <Route path="/auth/verify" element={<VerifyMagicLink />} />
+
             {/* Protected routes */}
             <Route
               path="/"

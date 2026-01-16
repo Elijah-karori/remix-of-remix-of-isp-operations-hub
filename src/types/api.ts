@@ -416,3 +416,186 @@ export interface BudgetSummary {
     remaining_amount: number;
     variance: number;
 }
+
+// --- Scrapers ---
+
+export interface ScraperRun {
+    supplier_id: number;
+    id: number;
+    status: string;
+    products_scraped: number;
+    products_updated?: number;
+    products_added?: number;
+    error_message?: string | null;
+    execution_time?: number | null;
+    started_at: string;
+    completed_at?: string | null;
+}
+
+export interface PriceHistory {
+    id: number;
+    product_id: number;
+    old_price: number;
+    new_price: number;
+    price_change: number;
+    price_change_percent: number;
+    recorded_at: string;
+}
+
+// --- Permissions & Roles (RBAC) ---
+
+export interface PermissionV2Out {
+    id: number;
+    name: string;
+    codename: string;
+    content_type_id?: number;
+}
+
+export type RoleStatus = 'active' | 'inactive' | 'archived';
+
+export interface HierarchyLevel {
+    level: number;
+    name: string;
+}
+
+export interface RoleHierarchyOut {
+    role: RoleV2Out;
+    children: RoleHierarchyOut[];
+    parent_role_id?: number | null;
+    depth: number;
+}
+
+export interface PermissionCheckResponse {
+    permission: string;
+    granted: boolean;
+}
+
+export interface PermissionDetail {
+    codename: string;
+    name: string;
+}
+
+export interface MyPermissionsResponse {
+    permissions: PermissionDetail[];
+    count: number;
+}
+
+export interface IndependentRoleOut {
+    name: string;
+    id: number;
+    description?: string | null;
+    level: number;
+    scope_level: string | null;
+    status: RoleStatus;
+    is_system_role: boolean;
+    created_at: string;
+    permissions: PermissionV2Out[];
+    is_independent: boolean;
+    floating_scope: string;
+    implementation_logic?: string | null;
+}
+
+export interface FuzzyMatchResult {
+    target_role_name: string;
+    suggested_parent_id?: number | null;
+    suggested_parent_name?: string | null;
+    suggested_level: HierarchyLevel;
+    confidence: number;
+    reason: string;
+}
+
+export interface AccessPolicyOut {
+    id: number;
+    name: string;
+    description?: string | null;
+    resource: string;
+    action: string;
+    required_roles?: string[] | null;
+    required_permissions?: string[] | null;
+    conditions?: Record<string, any> | null;
+    target_hierarchy_level?: HierarchyLevel | null;
+    start_time?: string | null;
+    end_time?: string | null;
+    active_days?: string[] | null;
+    priority: number;
+    is_active: boolean;
+    created_by?: number | null;
+    created_at: string;
+}
+
+export interface FeaturePolicyRequest {
+    feature_name: string;
+    resources: string[];
+    actions: string[];
+    conditions?: Record<string, any> | null;
+}
+
+export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending';
+
+export interface UserStatusUpdateRequest {
+    status: UserStatus;
+    reason?: string | null;
+}
+
+// --- Finance Extensions ---
+
+export interface MpesaTransactionOut {
+    id: number;
+    transaction_type: string;
+    mpesa_receipt_number?: string | null;
+    transaction_date?: string | null;
+    phone_number: string;
+    amount: number;
+    status: string;
+    result_desc?: string | null;
+    result_code?: number | null;
+    reference?: string | null;
+    description?: string | null;
+    created_at: string;
+    updated_at?: string | null;
+}
+
+export type BudgetUsageType = 'expense' | 'allocation' | 'adjustment';
+export type BudgetUsageStatus = 'approved' | 'pending' | 'rejected';
+export type SubBudgetType = string; // Using string as default if enum is not strictly defined yet
+
+export interface BudgetUsage {
+    id: number;
+    sub_budget_id: number;
+    description?: string | null;
+    amount: string | number;
+    type: BudgetUsageType;
+    transaction_date: string;
+    status: BudgetUsageStatus | null;
+    created_at: string;
+    updated_at?: string | null;
+}
+
+export interface SubBudget {
+    id: number;
+    name: SubBudgetType;
+    amount: string | number;
+    financial_account_id?: number | null;
+    master_budget_id: number;
+    usages: BudgetUsage[];
+}
+
+export interface MasterBudget {
+    id: number;
+    name: string;
+    start_date: string;
+    end_date: string;
+    total_amount: string | number;
+    created_at: string;
+    updated_at?: string | null;
+    sub_budgets: SubBudget[];
+}
+
+export interface FinancialSnapshotResponse {
+    generated_at: string;
+    active_projects: Record<string, any>;
+    monthly_performance: Record<string, any>;
+    receivables: Record<string, any>;
+    infrastructure_performance: Record<string, any>;
+    top_infrastructure?: string | null;
+}

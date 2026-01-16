@@ -29,6 +29,22 @@ import {
   BOMVarianceOut,
   ProjectFinancialsOut,
   ProfitabilityReportResponse,
+  ScraperRun,
+  PriceHistory,
+  RoleHierarchyOut,
+  IndependentRoleOut,
+  FuzzyMatchResult,
+  AccessPolicyOut,
+  FeaturePolicyRequest,
+  UserStatus,
+  UserStatusUpdateRequest,
+  MpesaTransactionOut,
+  MasterBudget,
+  SubBudget,
+  BudgetUsage,
+  FinancialSnapshotResponse,
+  PermissionCheckResponse,
+  MyPermissionsResponse
 } from "../types/api";
 
 export const API_BASE_URL = "http://erp.gygaview.co.ke";
@@ -48,9 +64,15 @@ export const setAccessToken = (token: string | null) => {
 export const getAccessToken = () => accessToken;
 
 // API fetch wrapper with error handling
+// API fetch wrapper with error handling
+interface ApiFetchConfig {
+  handle401?: boolean;
+}
+
 export async function apiFetch<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  config: ApiFetchConfig = { handle401: true }
 ): Promise<T> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -70,7 +92,7 @@ export async function apiFetch<T>(
     const error = await response.json().catch(() => ({ detail: "An error occurred" }));
 
     // Handle 401 Unauthorized - clear token
-    if (response.status === 401) {
+    if (response.status === 401 && config.handle401) {
       setAccessToken(null);
       throw new Error("Session expired. Please log in again.");
     }
@@ -131,10 +153,13 @@ export const authApi = {
   },
 
   verifyRegistrationOTP: async (email: string, otp: string) => {
-    const response = await apiFetch<Token>("/api/v1/auth/register/otp/verify", {
+    const searchParams = new URLSearchParams();
+    searchParams.append("email", email);
+    searchParams.append("otp", otp);
+
+    const response = await apiFetch<Token>(`/api/v1/auth/register/otp/verify?${searchParams.toString()}`, {
       method: "POST",
-      body: JSON.stringify({ email, otp }),
-    });
+    }, { handle401: false });
     if (response.access_token) {
       setAccessToken(response.access_token);
     }
@@ -149,12 +174,30 @@ export const authApi = {
   },
 
   verifyPasswordlessOTP: async (email: string, otp: string) => {
-    const response = await apiFetch<Token>("/api/v1/auth/passwordless/verify", {
+    const searchParams = new URLSearchParams();
+    searchParams.append("email", email);
+    searchParams.append("otp", otp);
+
+    const response = await apiFetch<Token>(`/api/v1/auth/passwordless/verify-otp?${searchParams.toString()}`, {
       method: "POST",
-      body: JSON.stringify({ email, otp }),
-    });
+    }, { handle401: false });
     setAccessToken(response.access_token);
     return response;
+  },
+
+  verifyMagicLink: async (token: string) => {
+    // User suggestion: "try to add token to authorization header and try redirect to auth/me"
+    // The token in the URL appears to be a valid JWT access token.
+    // We set it as the access token and verify it by fetching the current user profile.
+
+    setAccessToken(token);
+    try {
+      await authApi.me();
+      return { access_token: token, token_type: "bearer" };
+    } catch (error) {
+      setAccessToken(null); // Clear invalid token
+      throw error;
+    }
   },
 
   // Password reset
@@ -266,6 +309,13 @@ export const financeApi = {
   // New standardized endpoints
   financialAccounts: () => apiFetch<FinancialAccount[]>("/api/v1/finance/financial-accounts/"),
   getFinancialAccount: (id: number) => apiFetch<FinancialAccount>(`/api/v1/finance/financial-accounts/${id}`),
+
+  // Budgeting
+  listMasterBudgets: () => apiFetch<MasterBudget[]>("/api/v1/finance/budgets/master/"),
+  createMasterBudget: (data: any) => apiFetch<MasterBudget>("/api/v1/finance/budgets/master/", { method: "POST", body: JSON.stringify(data) }),
+  getMasterBudget: (id: number) => apiFetch<MasterBudget>(`/api/v1/finance/budgets/master/${id}`),
+  createSubBudget: (data: any) => apiFetch<SubBudget>("/api/v1/finance/budgets/sub/", { method: "POST", body: JSON.stringify(data) }),
+  recordBudgetUsage: (data: any) => apiFetch<BudgetUsage>("/api/v1/finance/budgets/usage", { method: "POST", body: JSON.stringify(data) }),
 };
 
 // M-Pesa endpoints
@@ -277,7 +327,7 @@ export const mpesaApi = {
     const searchParams = new URLSearchParams();
     if (params?.limit) searchParams.append("limit", String(params.limit));
     if (params?.status) searchParams.append("status", params.status);
-    return apiFetch(`/api/v1/finance/mpesa/transactions?${searchParams}`);
+    return apiFetch<MpesaTransactionOut[]>(`/api/v1/finance/mpesa/transactions?${searchParams}`);
   },
   b2cPay: (data: { phone_number: string; amount: number; remarks: string }) =>
     apiFetch("/api/v1/finance/mpesa/b2c/pay", { method: "POST", body: JSON.stringify(data) }),
@@ -463,15 +513,47 @@ export const auditApi = {
 
 // RBAC endpoints
 export const rbacApi = {
-  checkPermission: async (permission: string) => {
-    return apiFetch(`/api/v1/rbac/check?permission=${encodeURIComponent(permission)}`);
+  checkPermission: async (permission: string): Promise<PermissionCheckResponse> => {
+    return apiFetch<PermissionCheckResponse>(`/api/v1/rbac/check?permission=${encodeURIComponent(permission)}`);
   },
-  checkBatch: async (permissions: string[]) => {
-    return apiFetch("/api/v1/rbac/check-batch", { method: "POST", body: JSON.stringify({ permissions }) });
+  checkBatch: async (permissions: string[]): Promise<Record<string, boolean>> => {
+    return apiFetch<Record<string, boolean>>("/api/v1/rbac/check-batch", { method: "POST", body: JSON.stringify({ permissions }) });
   },
-  myPermissions: async () => {
-    return apiFetch("/api/v1/rbac/my-permissions");
+  myPermissions: async (): Promise<MyPermissionsResponse> => {
+    return apiFetch<MyPermissionsResponse>("/api/v1/rbac/my-permissions");
   },
+};
+
+// Management endpoints (RBAC & Policy)
+export const managementApi = {
+  // RBAC Hierarchy
+  getHierarchy: () => apiFetch<RoleHierarchyOut[]>("/api/v1/management/rbac/hierarchy"),
+  getIndependentRoles: () => apiFetch<IndependentRoleOut[]>("/api/v1/management/rbac/independent-roles"),
+  analyzeStructure: () => apiFetch<any>("/api/v1/management/rbac/analyze-structure"),
+  fuzzyMatchRole: (roleName: string) => apiFetch<FuzzyMatchResult>(`/api/v1/management/rbac/fuzzy-match?role_name=${encodeURIComponent(roleName)}`),
+
+  // Access Policies
+  listAccessPolicies: () => apiFetch<AccessPolicyOut[]>("/api/v1/management/access-policies/"),
+  createAccessPolicy: (data: any) => apiFetch<AccessPolicyOut>("/api/v1/management/access-policies/", { method: "POST", body: JSON.stringify(data) }),
+  getAccessPolicy: (id: number) => apiFetch<AccessPolicyOut>(`/api/v1/management/access-policies/${id}`),
+  updateAccessPolicy: (id: number, data: any) => apiFetch<AccessPolicyOut>(`/api/v1/management/access-policies/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteAccessPolicy: (id: number) => apiFetch(`/api/v1/management/access-policies/${id}`, { method: "DELETE" }),
+
+  // Feature Policies
+  listFeaturePolicies: () => apiFetch<any[]>("/api/v1/management/feature-policies/"), // Returns FeaturePolicy model, assuming similar to Request or Out
+  createFeaturePolicy: (data: FeaturePolicyRequest) => apiFetch<any>("/api/v1/management/feature-policies/", { method: "POST", body: JSON.stringify(data) }),
+
+  // User Management Extensions
+  updateUserStatus: (userId: number, data: UserStatusUpdateRequest) =>
+    apiFetch<UserOut>(`/api/v1/management/users/${userId}/status`, { method: "POST", body: JSON.stringify(data) }),
+};
+
+// Scrapers endpoints
+export const scrapersApi = {
+  run: (supplierId: number) => apiFetch<ScraperRun>(`/api/v1/scrapers/run?supplier_id=${supplierId}`, { method: "POST" }),
+  getStatus: (runId: number) => apiFetch<ScraperRun>(`/api/v1/scrapers/run/${runId}`),
+  getHistory: (limit = 20) => apiFetch<ScraperRun[]>(`/api/v1/scrapers/history?limit=${limit}`),
+  getPriceHistory: (productId: number) => apiFetch<PriceHistory[]>(`/api/v1/scrapers/price-history/${productId}`),
 };
 
 // Health check endpoints

@@ -17,7 +17,7 @@ export default function VerifyOTP() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const email = location.state?.email || "";
   const verificationType = location.state?.type || "registration"; // registration, passwordless, password-reset
 
@@ -60,7 +60,12 @@ export default function VerifyOTP() {
       }
     } catch (err: any) {
       console.error("OTP verification failed:", err);
-      setError(err.message || "Invalid or expired code. Please try again.");
+      let errorMessage = "Invalid or expired code. Please try again.";
+      if (err.message) errorMessage = err.message;
+      else if (err.detail) errorMessage = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+      else if (typeof err === 'object') errorMessage = JSON.stringify(err);
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +123,7 @@ export default function VerifyOTP() {
                 {verificationType === "passwordless" ? "Login Successful!" : "Verification Successful!"}
               </h2>
               <p className="text-muted-foreground">
-                {verificationType === "passwordless" 
+                {verificationType === "passwordless"
                   ? "Redirecting to dashboard..."
                   : "Your account has been verified. Redirecting to login..."
                 }
@@ -167,9 +172,9 @@ export default function VerifyOTP() {
               </InputOTP>
             </div>
 
-            <Button 
-              onClick={handleVerify} 
-              className="w-full" 
+            <Button
+              onClick={handleVerify}
+              className="w-full"
               disabled={isLoading || otp.length !== 6}
             >
               {isLoading ? (
@@ -206,8 +211,8 @@ export default function VerifyOTP() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-center">
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1"
             >
               <ArrowLeft className="h-4 w-4" />
