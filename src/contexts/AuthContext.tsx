@@ -48,12 +48,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPermissions(permissionsData.permissions || []);
     } catch (error) {
       console.error("Failed to fetch user:", error);
-      // Only clear token on auth errors, not network errors
-      if (error instanceof Error && error.message.includes("401")) {
-        setAccessToken(null);
+      
+      // Handle auth errors
+      if (error instanceof Error) {
+        if (error.message.includes("Session expired") || error.message.includes("401")) {
+          setAccessToken(null);
+          setUser(null);
+          setPermissions([]);
+        }
       }
-      setUser(null);
-      setPermissions([]);
     } finally {
       setIsLoading(false);
     }

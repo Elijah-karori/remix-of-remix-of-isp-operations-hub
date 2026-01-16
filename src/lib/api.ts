@@ -11,7 +11,7 @@ import {
   delay,
 } from "./mock-data";
 
-export const API_BASE_URL = "http://erp.gygaview.co.ke";
+export const API_BASE_URL = "https://erp.gygaview.co.ke";
 
 // Token management
 let accessToken: string | null = localStorage.getItem("access_token");
@@ -27,7 +27,7 @@ export const setAccessToken = (token: string | null) => {
 
 export const getAccessToken = () => accessToken;
 
-// API fetch wrapper
+// API fetch wrapper with error handling
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -48,6 +48,18 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: "An error occurred" }));
+    
+    // Handle 401 Unauthorized - clear token
+    if (response.status === 401) {
+      setAccessToken(null);
+      throw new Error("Session expired. Please log in again.");
+    }
+    
+    // Handle 403 Forbidden
+    if (response.status === 403) {
+      throw new Error("Access denied. You don't have permission for this action.");
+    }
+    
     throw new Error(error.detail || `HTTP ${response.status}`);
   }
 
@@ -76,6 +88,12 @@ export const authApi = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: "Login failed" }));
+      if (response.status === 401) {
+        throw new Error("Invalid email or password");
+      }
+      if (response.status === 403) {
+        throw new Error("Account is inactive. Please contact administrator.");
+      }
       throw new Error(error.detail || "Login failed");
     }
 
@@ -84,10 +102,16 @@ export const authApi = {
     return data;
   },
 
-  register: async (data: { email: string; full_name: string; phone: string; password: string }) => {
+  register: async (data: { email: string; full_name: string; phone?: string; password: string }) => {
     if (getDemoMode()) {
       await delay(500);
-      return { message: "Registration successful (demo mode)" };
+      return { 
+        id: Date.now(), 
+        email: data.email, 
+        full_name: data.full_name,
+        is_active: true,
+        message: "Registration successful (demo mode)" 
+      };
     }
     return apiFetch("/api/v1/auth/register", {
       method: "POST",
@@ -101,6 +125,32 @@ export const authApi = {
       return DEMO_USER;
     }
     return apiFetch("/api/v1/auth/me");
+  },
+
+  refresh: async () => {
+    if (getDemoMode()) {
+      await delay(200);
+      const newToken = "demo_token_" + Date.now();
+      setAccessToken(newToken);
+      return { access_token: newToken, token_type: "bearer" };
+    }
+    return apiFetch<{ access_token: string; token_type: string }>("/api/v1/auth/refresh", {
+      method: "POST",
+    }).then(data => {
+      setAccessToken(data.access_token);
+      return data;
+    });
+  },
+
+  setPassword: async (newPassword: string) => {
+    if (getDemoMode()) {
+      await delay(200);
+      return { message: "Password updated (demo mode)" };
+    }
+    return apiFetch("/api/v1/auth/set-password", {
+      method: "POST",
+      body: JSON.stringify({ new_password: newPassword }),
+    });
   },
 
   logout: () => setAccessToken(null),
