@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, Plus, Pencil, Trash2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Permission {
   id: string;
@@ -40,6 +41,13 @@ export default function Permissions() {
   ]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Permission>>({});
+  const [isAdding, setIsAdding] = useState(false);
+  const [newPermission, setNewPermission] = useState<Omit<Permission, 'id'>>({
+    name: '',
+    description: '',
+    resource: '',
+    action: ''
+  });
 
   const handleEdit = (permission: Permission) => {
     setEditingId(permission.id);
@@ -48,13 +56,28 @@ export default function Permissions() {
 
   const handleSave = (id: string) => {
     setPermissions(permissions.map(p => 
-      p.id === id ? { ...p, ...editForm } : p
+      p.id === id ? { ...p, ...editForm } as Permission : p
     ));
     setEditingId(null);
+    toast.success("Permission saved successfully");
   };
 
   const handleDelete = (id: string) => {
-    setPermissions(permissions.filter(p => p.id !== id));
+    if (confirm("Are you sure you want to delete this permission?")) {
+      setPermissions(permissions.filter(p => p.id !== id));
+      toast.success("Permission deleted successfully");
+    }
+  };
+
+  const handleAdd = () => {
+    if (newPermission.name && newPermission.description && newPermission.resource && newPermission.action) {
+      setPermissions([...permissions, { ...newPermission, id: `${permissions.length + 1}` }]);
+      setNewPermission({ name: '', description: '', resource: '', action: '' });
+      setIsAdding(false);
+      toast.success("Permission added successfully");
+    } else {
+      toast.error("Please fill all fields");
+    }
   };
 
   const filteredPermissions = permissions.filter(permission => 
@@ -71,11 +94,42 @@ export default function Permissions() {
             Manage system permissions and access controls
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAdding(!isAdding)}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Permission
+          {isAdding ? "Cancel" : "Add Permission"}
         </Button>
       </div>
+
+      {isAdding && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Add New Permission</CardTitle>
+          </CardHeader>
+          <CardContent className="flex gap-4">
+            <Input
+              placeholder="Name (e.g., user:read)"
+              value={newPermission.name}
+              onChange={(e) => setNewPermission({ ...newPermission, name: e.target.value })}
+            />
+            <Input
+              placeholder="Description"
+              value={newPermission.description}
+              onChange={(e) => setNewPermission({ ...newPermission, description: e.target.value })}
+            />
+            <Input
+              placeholder="Resource"
+              value={newPermission.resource}
+              onChange={(e) => setNewPermission({ ...newPermission, resource: e.target.value })}
+            />
+            <Input
+              placeholder="Action"
+              value={newPermission.action}
+              onChange={(e) => setNewPermission({ ...newPermission, action: e.target.value })}
+            />
+            <Button onClick={handleAdd}>Save</Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

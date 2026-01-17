@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentProjects } from "@/components/dashboard/RecentProjects";
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 
 export default function Index() {
+  const { user } = useAuth(); // Get user from auth context
   const { data: projectsOverview, isLoading: loadingProjects, error: projectsError, refetch: refetchProjects } = useProjectsOverview();
   const { data: taskAllocation, isLoading: loadingTasks, error: tasksError, refetch: refetchTasks } = useTaskAllocation();
   const { data: budgetTracking, isLoading: loadingBudget, error: budgetError, refetch: refetchBudget } = useBudgetTracking();
@@ -43,7 +45,10 @@ export default function Index() {
   const getTotalTechnicians = () => projectsOverview?.total_projects || 0;
 
   return (
-    <DashboardLayout title="Dashboard" subtitle="Welcome back, John">
+    <DashboardLayout 
+      title="Dashboard" 
+      subtitle={`Welcome back, ${user?.full_name || user?.email || 'User'}`}
+    >
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {isStatsLoading ? (

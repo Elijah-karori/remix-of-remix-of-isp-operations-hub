@@ -12,10 +12,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle, ShoppingCart, RefreshCw } from "lucide-react";
+import { AlertTriangle, ShoppingCart, RefreshCw, Download } from "lucide-react";
+import { toast } from "sonner";
+import { exportToExcel } from "@/lib/export";
 
 export function LowStockTab() {
   const { data: lowStockItems, isLoading, error, refetch } = useLowStockItems();
+
+  const handleCreateOrder = (productId: number) => {
+    toast.info(`Creating order for product ${productId}...`);
+    // Implement logic to create a purchase order for the product
+  };
+
+  const handleExport = (format: string) => {
+    if (lowStockItems && lowStockItems.length > 0) {
+      exportToExcel(lowStockItems, "low-stock-items", "Low Stock Items");
+      toast.success("Low stock items exported successfully!");
+    } else {
+      toast.error("No low stock items to export.");
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -88,10 +104,16 @@ export function LowStockTab() {
               Products that have fallen below their reorder level
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport("csv")}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {lowStockItems?.length === 0 ? (
@@ -130,7 +152,7 @@ export function LowStockTab() {
                       </TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleCreateOrder(item.id)}>
                           <ShoppingCart className="h-4 w-4 mr-2" />
                           Reorder
                         </Button>

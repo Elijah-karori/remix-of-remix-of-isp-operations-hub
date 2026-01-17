@@ -1,6 +1,7 @@
+// /components/auth/ProtectedRoute.tsx
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,29 +9,32 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, hasPermission } = useAuth();
+  const { user, isLoading, isAuthChecked, hasPermission } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  // Show loading spinner while checking auth
+  if (isLoading || !isAuthChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+        <span className="ml-2 text-sm text-muted-foreground">
+          Verifying authentication...
+        </span>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  // Redirect to login if not authenticated
+  if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Check for specific permission if required
   if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-2">Access Denied</h1>
+          <h2 className="text-2xl font-bold text-destructive mb-2">Access Denied</h2>
           <p className="text-muted-foreground">
             You don't have permission to access this page.
           </p>

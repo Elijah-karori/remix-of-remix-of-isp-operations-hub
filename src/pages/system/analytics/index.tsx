@@ -16,6 +16,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { toast } from 'sonner';
 
 // Register ChartJS components
 ChartJS.register(
@@ -113,14 +114,19 @@ const activityData = {
 };
 
 export default function Analytics() {
-  const refreshData = () => {
-    // In a real app, this would refetch data from the API
-    console.log('Refreshing data...');
+  const exportData = (format: 'csv' | 'json' | 'excel') => {
+    toast.info(`Exporting data as ${format}...`);
+    // Implement actual export
+    const link = document.createElement('a');
+    link.href = `/api/v1/analytics/export?format=${format}`;
+    link.download = `analytics-${new Date().toISOString()}.${format}`;
+    link.click();
   };
 
-  const exportData = () => {
-    // In a real app, this would trigger a data export
-    console.log('Exporting data...');
+  const refreshData = () => {
+    // Refetch all queries
+    toast.info("Refreshing analytics data...");
+    // QueryClient.refetchQueries({ queryKey: ['analytics'] })
   };
 
   return (
@@ -137,7 +143,7 @@ export default function Analytics() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button variant="outline" size="sm" onClick={exportData}>
+          <Button variant="outline" size="sm" onClick={() => exportData('csv')}>
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>

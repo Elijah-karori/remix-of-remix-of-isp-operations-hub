@@ -10,20 +10,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import {
-  Plus,
-  Search,
-  LayoutGrid,
-  List,
-  Clock,
-  Users,
-  MapPin,
+import { 
+  Plus, 
+  Search, 
+  LayoutGrid, 
+  List, 
+  Clock, 
+  Users, 
+  MapPin, 
   MoreHorizontal,
+  Eye,
+  Edit,
+  Download,
+  Filter,
+  RefreshCw,
+  Share2,
+  Archive,
+  Trash2
 } from "lucide-react";
 import { useState } from "react";
 import { useProjects, type ProjectsFilters } from "@/hooks/use-projects";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const statusStyles: Record<string, string> = {
   planning: "bg-warning/10 text-warning border-warning/20",
@@ -43,16 +53,68 @@ const typeStyles: Record<string, string> = {
 };
 
 export default function Projects() {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const filters: ProjectsFilters = {};
   if (statusFilter !== "all") filters.status = statusFilter;
   if (typeFilter !== "all") filters.infrastructure_type = typeFilter;
 
   const { data: projects, isLoading, error, refetch } = useProjects(filters);
+
+  const handleNewProject = async () => {
+    setIsCreating(true);
+    try {
+      toast.info("Creating new project...");
+      // Implement project creation
+      setTimeout(() => {
+        toast.success("Project created successfully");
+        setIsCreating(false);
+        // Navigate to project creation form or show modal
+      }, 1000);
+    } catch (error) {
+      toast.error("Failed to create project");
+      setIsCreating(false);
+    }
+  };
+
+  const handleExportProjects = () => {
+    toast.info("Exporting projects...");
+    // Implement export logic
+  };
+
+  const handleRefresh = () => {
+    toast.info("Refreshing projects...");
+    refetch();
+  };
+
+  const handleProjectAction = (projectId: number, action: string) => {
+    switch (action) {
+      case "view":
+        setSelectedProject(projectId);
+        // Navigate or show details
+        break;
+      case "edit":
+        toast.info(`Editing project ${projectId}...`);
+        break;
+      case "archive":
+        toast.info(`Archiving project ${projectId}...`);
+        break;
+      case "delete":
+        if (confirm("Are you sure you want to delete this project?")) {
+          toast.info(`Deleting project ${projectId}...`);
+        }
+        break;
+      case "share":
+        toast.info(`Sharing project ${projectId}...`);
+        break;
+    }
+  };
 
   const filteredProjects = (projects || []).filter((project) =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -114,8 +176,16 @@ export default function Projects() {
               <List className="w-4 h-4" />
             </Button>
           </div>
-          <Button className="gradient-primary text-primary-foreground">
-            <Plus className="w-4 h-4 mr-2" />
+          <Button 
+            className="gradient-primary text-primary-foreground"
+            onClick={handleNewProject}
+            disabled={isCreating}
+          >
+            {isCreating ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" />
+            )}
             New Project
           </Button>
         </div>
@@ -153,9 +223,36 @@ export default function Projects() {
                   <h3 className="text-lg font-semibold text-foreground mb-1">{project.name}</h3>
                   <p className="text-sm text-muted-foreground">{project.customer_name}</p>
                 </div>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleProjectAction(project.id, "view")}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleProjectAction(project.id, "edit")}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleProjectAction(project.id, "share")}
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleProjectAction(project.id, "archive")}
+                  >
+                    <Archive className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-3 mb-4">

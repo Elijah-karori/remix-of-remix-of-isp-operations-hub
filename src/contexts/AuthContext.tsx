@@ -2,15 +2,14 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { authApi, getAccessToken, setAccessToken, rbacApi } from "@/lib/api";
 import { UserOut } from "@/types/api";
 
-// Local alias if needed, or just use UserOut
 type User = UserOut;
-
 
 interface AuthContextType {
   user: User | null;
   permissions: string[];
   isLoading: boolean;
   isAuthenticated: boolean;
+  isAuthChecked: boolean; // New: track if auth check is complete
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
@@ -23,35 +22,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthChecked, setIsAuthChecked] = useState(false); // Track if initial auth check is done
 
-  const fetchUserAndPermissions = useCallback(async () => {
+  const fetchUserAndPermissions = useCallback(async (): Promise<boolean> => {
     const token = getAccessToken();
     if (!token) {
       setIsLoading(false);
-      return;
+      setIsAuthChecked(true);
+      return false;
     }
 
     try {
-      const [userData, permissionsData] = await Promise.all([
-        authApi.me() as Promise<User>,
-        rbacApi.myPermissions() as Promise<{ permissions: { codename: string }[] }>,
-      ]);
+      setIsLoading(true);
+      // Fetch user and permissions in sequence to ensure we have both
+      const userData = await authApi.me() as User;
       setUser(userData);
-      // Map PermissionDetail objects to codename strings
-      setPermissions(permissionsData.permissions.map((p) => p.codename));
+      
+      try {
+        const permissionsData = await rbacApi.myPermissions() as Promise<{ permissions: { codename: string }[] }>;
+        setPermissions(permissionsData.permissions.map((p) => p.codename));
+      } catch (permError) {
+        console.warn("Failed to fetch permissions, using empty array:", permError);
+        setPermissions([]);
+      }
+      
+      return true;
     } catch (error) {
       console.error("Failed to fetch user:", error);
-
-      // Handle auth errors
-      if (error instanceof Error) {
-        if (error.message.includes("Session expired") || error.message.includes("401")) {
-          setAccessToken(null);
-          setUser(null);
-          setPermissions([]);
-        }
+      
+      // Clear invalid token
+      if (error instanceof Error && 
+          (error.message.includes("Session expired") || 
+           error.message.includes("401") ||
+           error.message.includes("Unauthorized"))) {
+        setAccessToken(null);
+        setUser(null);
+        setPermissions([]);
       }
+      return false;
     } finally {
       setIsLoading(false);
+      setIsAuthChecked(true); // Mark auth check as complete
     }
   }, []);
 
@@ -61,14 +72,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchUserAndPermissions]);
 
   const login = async (email: string, password: string) => {
-    await authApi.login(email, password);
-    await fetchUserAndPermissions();
+    setIsLoading(true);
+    try {
+      // 1. Get token from login
+      await authApi.login(email, password);
+      
+      // 2. Fetch user data and permissions
+      const success = await fetchUserAndPermissions();
+      if (!success) {
+        throw new Error("Failed to fetch user data after login");
+      }
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
+    }
   };
 
   const logout = () => {
     authApi.logout();
     setUser(null);
     setPermissions([]);
+    setIsAuthChecked(true); // Still mark as checked
   };
 
   const hasPermission = (permission: string) => {
@@ -86,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         permissions,
         isLoading,
         isAuthenticated: !!user,
+        isAuthChecked, // Expose this
         login,
         logout,
         hasPermission,

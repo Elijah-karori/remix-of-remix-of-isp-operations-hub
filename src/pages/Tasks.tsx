@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,9 @@ import {
   AlertTriangle,
   MoreHorizontal,
   GripVertical,
+  RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Task {
   id: number;
@@ -140,6 +143,55 @@ const priorityStyles = {
 };
 
 export default function Tasks() {
+  const [draggingTask, setDraggingTask] = useState<Task | null>(null);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+
+  const handleNewTask = async () => {
+    setIsCreatingTask(true);
+    try {
+      toast.info("Creating new task...");
+      // Implement task creation
+      setTimeout(() => {
+        toast.success("Task created successfully");
+        setIsCreatingTask(false);
+      }, 1000);
+    } catch (error) {
+      toast.error("Failed to create task");
+      setIsCreatingTask(false);
+    }
+  };
+
+  const handleDragStart = (task: Task) => {
+    setDraggingTask(task);
+  };
+
+  const handleDrop = (status: string) => {
+    if (draggingTask) {
+      toast.info(`Moving task to ${status}...`);
+      // Implement status update
+      setDraggingTask(null);
+    }
+  };
+
+  const handleTaskAction = (taskId: number, action: string) => {
+    switch (action) {
+      case "view":
+        toast.info(`Viewing task ${taskId}`);
+        break;
+      case "edit":
+        toast.info(`Editing task ${taskId}`);
+        break;
+      case "delete":
+        if (confirm("Are you sure you want to delete this task?")) {
+          toast.info(`Deleting task ${taskId}...`);
+        }
+        break;
+      case "assign":
+        toast.info(`Assigning task ${taskId}...`);
+        break;
+    }
+  };
+
   return (
     <DashboardLayout title="Tasks" subtitle="Manage and track work items">
       {/* Toolbar */}
@@ -151,8 +203,16 @@ export default function Tasks() {
             className="pl-10 bg-secondary border-border"
           />
         </div>
-        <Button className="gradient-primary text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" />
+        <Button 
+          className="gradient-primary text-primary-foreground"
+          onClick={handleNewTask}
+          disabled={isCreatingTask}
+        >
+          {isCreatingTask ? (
+            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4 mr-2" />
+          )}
           New Task
         </Button>
       </div>
@@ -164,7 +224,12 @@ export default function Tasks() {
           const tasks = tasksByStatus[status] || [];
 
           return (
-            <div key={status} className="flex flex-col">
+            <div 
+              key={status} 
+              className="flex flex-col"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(status)}
+            >
               {/* Column Header */}
               <div className="flex items-center gap-3 mb-4">
                 <div className={cn("w-3 h-3 rounded-full", config.color)} />
@@ -181,6 +246,9 @@ export default function Tasks() {
                     key={task.id}
                     className="glass rounded-xl p-4 hover:border-primary/30 transition-all duration-200 cursor-pointer group animate-fade-in"
                     style={{ animationDelay: `${index * 50}ms` }}
+                    draggable
+                    onDragStart={() => handleDragStart(task)}
+                    onDragEnd={() => setDraggingTask(null)}
                   >
                     <div className="flex items-start gap-2 mb-3">
                       <GripVertical className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
@@ -194,7 +262,7 @@ export default function Tasks() {
                           {task.title}
                         </h4>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleTaskAction(task.id, 'edit')}>
                         <MoreHorizontal className="w-3 h-3" />
                       </Button>
                     </div>

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { inventoryApi, apiFetch } from "@/lib/api";
+import { inventoryApi, apiFetch, procurementApi } from "@/lib/api";
 
 export interface Product {
   id: number;
@@ -120,6 +120,84 @@ export function useSetStockAlert() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    },
+  });
+}
+
+export function useProcurementOrders() {
+  return useQuery({
+    queryKey: ["procurement", "orders"],
+    queryFn: () => procurementApi.pendingOrders(),
+    staleTime: 60000,
+  });
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => procurementApi.createOrder(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["procurement", "orders"] });
+    },
+  });
+}
+
+export function useInventoryValuation() {
+  return useQuery({
+    queryKey: ["inventory", "valuation"],
+    queryFn: () => inventoryApi.valuation(),
+    staleTime: 3600000, // 1 hour
+  });
+}
+
+export function useInventoryTurnoverAnalysis(days = 90) {
+  return useQuery({
+    queryKey: ["inventory", "turnoverAnalysis", days],
+    queryFn: () => inventoryApi.turnoverAnalysis(days),
+    staleTime: 3600000, // 1 hour
+  });
+}
+
+export function useInventoryDeadStock(daysThreshold = 90) {
+  return useQuery({
+    queryKey: ["inventory", "deadStock", daysThreshold],
+    queryFn: () => inventoryApi.deadStock(daysThreshold),
+    staleTime: 3600000, // 1 hour
+  });
+}
+
+export function useCreateSupplier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<Supplier>) => inventoryApi.createSupplier(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", "suppliers"] });
+    },
+  });
+}
+
+export function useUpdateSupplier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Supplier> }) =>
+      inventoryApi.updateSupplier(id, data),
+    onSuccess: (updatedSupplier) => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", "suppliers"] });
+      queryClient.setQueryData(["inventory", "supplier", updatedSupplier.id], updatedSupplier);
+    },
+  });
+}
+
+export function useApproveOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ purchaseId, approved, notes }: { purchaseId: number; approved: boolean; notes?: string }) =>
+      procurementApi.approveOrder(purchaseId, approved, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["procurement", "orders"] });
     },
   });
 }

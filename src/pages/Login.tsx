@@ -23,22 +23,27 @@ export default function Login() {
   const successMessage = location.state?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
+  e.preventDefault();
+  setError("");
+  setIsLoading(true);
 
-    try {
-      console.log("Attempting login for:", email);
-      await login(email, password);
-      console.log("Login successful, navigating to:", from);
-      navigate(from, { replace: true });
-    } catch (err: any) {
-      console.error("Login failed:", err);
-      setError(err.message || "Login failed. Please check your credentials.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    console.log("Attempting login for:", email);
+    
+    // Call login which will fetch user data and permissions
+    await login(email, password);
+    
+    console.log("Login successful, user authenticated");
+    
+    // Navigate to the intended page or dashboard
+    navigate(from, { replace: true });
+  } catch (err: any) {
+    console.error("Login failed:", err);
+    setError(err.message || "Login failed. Please check your credentials.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">

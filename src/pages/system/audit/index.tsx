@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Download, Calendar as CalendarIcon, Filter, FileText } from 'lucide-react';
+import { Search, Download, Calendar as CalendarIcon, Filter, FileText, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface AuditLog {
   id: string;
@@ -48,9 +49,14 @@ export default function AuditLogs() {
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 
     to: new Date() 
   });
-  const [logs] = useState<AuditLog[]>(() => generateMockLogs(50));
+  const [logs, setLogs] = useState<AuditLog[]>(() => generateMockLogs(50));
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
+  const handleRefresh = () => {
+    toast.info("Refreshing audit logs...");
+    setLogs(generateMockLogs(50));
+  };
+  
   const filteredLogs = logs.filter(log => {
     const matchesSearch = 
       log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -69,8 +75,23 @@ export default function AuditLogs() {
   });
 
   const exportToCSV = () => {
-    // In a real app, this would generate and download a CSV file
-    console.log('Exporting logs to CSV...');
+    toast.info("Exporting logs to CSV...");
+    const headers = "id,timestamp,action,userId,userEmail,ipAddress,details,status\n";
+    const csvContent = filteredLogs.map(log => 
+      `${log.id},${log.timestamp.toISOString()},"${log.action}","${log.userId}","${log.userEmail}","${log.ipAddress}","${log.details}","${log.status}"`
+    ).join("\n");
+
+    const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "audit-logs.csv");
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -96,6 +117,10 @@ export default function AuditLogs() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
           <Button variant="outline" onClick={exportToCSV}>
             <Download className="mr-2 h-4 w-4" />
             Export

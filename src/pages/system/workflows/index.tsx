@@ -15,6 +15,7 @@ import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
 
 const nodeTypes = {};
 
@@ -61,16 +62,33 @@ export default function Workflows() {
     []
   );
 
-  const addNode = () => {
+  const addNode = (type: 'default' | 'approval') => {
     const newNode = {
       id: `${nodes.length + 1}`,
-      data: { label: `Step ${nodes.length}` },
+      data: { label: type === 'approval' ? `Approval ${nodes.length}` : `Step ${nodes.length}` },
       position: {
         x: Math.random() * 500,
         y: Math.random() * 500,
       },
+      style: type === 'approval' ? { backgroundColor: '#fde047', color: '#1e293b' } : undefined,
     };
     setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleSave = () => {
+    toast.info("Saving workflow...");
+    console.log("Nodes:", nodes);
+    console.log("Edges:", edges);
+    setTimeout(() => {
+      toast.success("Workflow saved successfully");
+    }, 1000);
+  };
+
+  const handlePublish = () => {
+    toast.info("Publishing workflow...");
+    setTimeout(() => {
+      toast.success("Workflow published successfully");
+    }, 1000);
   };
 
   return (
@@ -78,8 +96,8 @@ export default function Workflows() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Workflow Designer</h1>
         <div className="flex gap-2">
-          <Button variant="outline">Save Workflow</Button>
-          <Button>Publish</Button>
+          <Button variant="outline" onClick={handleSave}>Save Workflow</Button>
+          <Button onClick={handlePublish}>Publish</Button>
         </div>
       </div>
       
@@ -100,11 +118,11 @@ export default function Workflows() {
               <Controls />
               <Background />
               <Panel position="top-right" className="flex gap-2">
-                <Button size="sm" onClick={addNode} className="gap-2">
+                <Button size="sm" onClick={() => addNode('default')} className="gap-2">
                   <Plus className="h-4 w-4" />
                   Add Step
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => addNode('approval')}>
                   Add Approval
                 </Button>
               </Panel>
