@@ -13,7 +13,7 @@ export default function Register() {
   const [formData, setFormData] = useState({
     email: "",
     full_name: "",
-    phone: "",
+    phone_number: "",
     password: "",
     confirmPassword: "",
   });
@@ -50,7 +50,7 @@ export default function Register() {
       const response = await authApi.register({
         email: formData.email,
         full_name: formData.full_name,
-        phone: formData.phone || undefined,
+        phone_number: formData.phone_number || undefined,
         password: formData.password,
       });
       console.log("Registration response:", response);
@@ -76,7 +76,7 @@ export default function Register() {
       await authApi.requestRegistrationOTP(
         formData.email,
         formData.full_name,
-        formData.phone || undefined
+        formData.phone_number || undefined
       );
       console.log("OTP registration requested for:", formData.email);
       navigate("/verify-otp", {
@@ -177,13 +177,13 @@ export default function Register() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone (Optional)</Label>
+                    <Label htmlFor="phone_number">Phone (Optional)</Label>
                     <Input
-                      id="phone"
-                      name="phone"
+                      id="phone_number"
+                      name="phone_number"
                       type="tel"
                       placeholder="+254 700 000 000"
-                      value={formData.phone}
+                      value={formData.phone_number}
                       onChange={handleChange}
                       disabled={isLoading}
                     />
@@ -264,10 +264,10 @@ export default function Register() {
                     <Label htmlFor="otp_phone">Phone (Optional)</Label>
                     <Input
                       id="otp_phone"
-                      name="phone"
+                      name="phone_number"
                       type="tel"
                       placeholder="+254 700 000 000"
-                      value={formData.phone}
+                      value={formData.phone_number}
                       onChange={handleChange}
                       disabled={isLoading}
                     />

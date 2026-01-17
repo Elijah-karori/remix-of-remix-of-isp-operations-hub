@@ -31,7 +31,7 @@ export default function Profile() {
 
   const [profileData, setProfileData] = useState({
     full_name: user?.full_name || "",
-    phone: user?.phone || "",
+    phone_number: user?.phone_number || "",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -220,14 +220,14 @@ export default function Profile() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
+                      <Label htmlFor="phone_number">Phone Number</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          id="phone"
+                          id="phone_number"
                           type="tel"
-                          value={profileData.phone}
-                          onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                          value={profileData.phone_number}
+                          onChange={(e) => setProfileData({ ...profileData, phone_number: e.target.value })}
                           disabled={isUpdatingProfile}
                           className="pl-10"
                         />
