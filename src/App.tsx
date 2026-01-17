@@ -19,6 +19,11 @@ import PasswordlessLogin from "./pages/PasswordlessLogin";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import VerifyMagicLink from "./pages/VerifyMagicLink";
+import Workflows from "./pages/system/workflows";
+import Permissions from "./pages/system/permissions";
+import Analytics from "./pages/system/analytics";
+import Audit from "./pages/system/audit";
+import SystemSettings from "./pages/system/settings";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +90,46 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/system/workflows"
+              element={
+                <ProtectedRoute>
+                  <Workflows />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/system/permissions"
+              element={
+                <ProtectedRoute>
+                  <Permissions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/system/analytics"
+              element={
+                <ProtectedRoute>
+                  <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/system/audit"
+              element={
+                <ProtectedRoute>
+                  <Audit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/system/settings"
+              element={
+                <ProtectedRoute>
+                  <SystemSettings />
                 </ProtectedRoute>
               }
             />

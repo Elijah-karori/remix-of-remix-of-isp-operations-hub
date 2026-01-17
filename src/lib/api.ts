@@ -571,7 +571,7 @@ export const healthApi = {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/health`, {
+      const response = await fetch(`${API_BASE_URL}/health`, {
         method: "GET",
         signal: controller.signal,
       });
@@ -609,8 +609,8 @@ export const healthApi = {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/`, {
-        method: "HEAD",
+      const response = await fetch(`${API_BASE_URL}/`, {
+        method: "get",
         mode: "no-cors",
         signal: controller.signal,
       });

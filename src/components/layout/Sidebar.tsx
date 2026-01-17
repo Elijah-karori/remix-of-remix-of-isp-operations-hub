@@ -41,11 +41,11 @@ const mainNavItems: NavItem[] = [
 ];
 
 const systemNavItems: NavItem[] = [
-  { label: "Workflows", icon: GitBranch, href: "/workflows" },
-  { label: "Permissions", icon: Shield, href: "/permissions" },
-  { label: "Analytics", icon: BarChart3, href: "/analytics" },
-  { label: "Audit Logs", icon: FileText, href: "/audit" },
-  { label: "Settings", icon: Settings, href: "/settings" },
+  { label: "Workflows", icon: GitBranch, href: "/system/workflows" },
+  { label: "Permissions", icon: Shield, href: "/system/permissions" },
+  { label: "Analytics", icon: BarChart3, href: "/system/analytics" },
+  { label: "Audit Logs", icon: FileText, href: "/system/audit" },
+  { label: "Settings", icon: Settings, href: "/system/settings" },
 ];
 
 export function Sidebar() {
