@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, Monitor, Bell, Mail, User, Shield, Database, Globe, CreditCard, MessageSquare } from 'lucide-react';
+import { Sun, Moon, Monitor, Bell, Mail, User, Shield, Database, Globe, CreditCard, MessageSquare, Phone } from 'lucide-react';
 
 const themes = [
   { value: 'light', label: 'Light', icon: Sun },
