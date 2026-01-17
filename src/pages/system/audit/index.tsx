@@ -1,57 +1,53 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { auditApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+<<<<<<< HEAD
 import { Search, Download, Calendar as CalendarIcon, Filter, FileText, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+=======
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Search, Download, Filter, FileText, RefreshCw, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+>>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
 
 interface AuditLog {
-  id: string;
-  timestamp: Date;
+  id: number;
+  timestamp: string;
   action: string;
-  userId: string;
-  userEmail: string;
-  ipAddress: string;
-  details: string;
-  status: 'success' | 'failed' | 'warning';
+  resource: string;
+  resource_id?: number;
+  user_id: number;
+  user_email?: string;
+  ip_address?: string;
+  details?: string;
+  old_values?: Record<string, any>;
+  new_values?: Record<string, any>;
 }
-
-const generateMockLogs = (count: number): AuditLog[] => {
-  const actions = [
-    'User Login',
-    'Permission Updated',
-    'User Created',
-    'Settings Updated',
-    'Password Changed',
-    'Role Assigned',
-    'Data Exported'
-  ];
-  
-  const statuses: ('success' | 'failed' | 'warning')[] = ['success', 'failed', 'warning'];
-  
-  return Array.from({ length: count }, (_, i) => ({
-    id: `log-${i + 1}`,
-    timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-    action: actions[Math.floor(Math.random() * actions.length)],
-    userId: `user-${Math.floor(Math.random() * 10) + 1}`,
-    userEmail: `user${Math.floor(Math.random() * 10) + 1}@example.com`,
-    ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
-    details: 'Action performed successfully',
-    status: statuses[Math.floor(Math.random() * statuses.length)]
-  }));
-};
 
 export default function AuditLogs() {
   const [searchTerm, setSearchTerm] = useState('');
+<<<<<<< HEAD
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ 
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 
     to: new Date() 
   });
   const [logs, setLogs] = useState<AuditLog[]>(() => generateMockLogs(50));
+=======
+  const [actionFilter, setActionFilter] = useState<string>('all');
+  const [resourceFilter, setResourceFilter] = useState<string>('all');
+  const [page, setPage] = useState(0);
+>>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const limit = 50;
 
+<<<<<<< HEAD
   const handleRefresh = () => {
     toast.info("Refreshing audit logs...");
     setLogs(generateMockLogs(50));
@@ -91,23 +87,62 @@ export default function AuditLogs() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+=======
+  const { data: logs, isLoading, error, refetch } = useQuery<AuditLog[]>({
+    queryKey: ['audit', 'logs', page, actionFilter, resourceFilter],
+    queryFn: async () => {
+      const params: any = { skip: page * limit, limit };
+      if (actionFilter && actionFilter !== 'all') params.action = actionFilter;
+      if (resourceFilter && resourceFilter !== 'all') params.resource = resourceFilter;
+      return auditApi.logs(params) as Promise<AuditLog[]>;
+    },
+    staleTime: 30000,
+  });
+
+  const { data: stats } = useQuery<any>({
+    queryKey: ['audit', 'stats'],
+    queryFn: () => auditApi.stats(7),
+    staleTime: 60000,
+  });
+
+  const filteredLogs = logs?.filter(log => {
+    const matchesSearch = 
+      log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.resource?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.ip_address?.includes(searchTerm);
+    return matchesSearch;
+  }) || [];
+
+  const handleExport = async () => {
+    try {
+      const result = await auditApi.export('csv', 30);
+      console.log('Export result:', result);
+    } catch (err) {
+      console.error('Export failed:', err);
+>>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'bg-green-100 text-green-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
+  const getActionColor = (action: string) => {
+    switch (action?.toLowerCase()) {
+      case 'create':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'update':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'delete':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+      case 'login':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'logout':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   return (
+<<<<<<< HEAD
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -127,17 +162,72 @@ export default function AuditLogs() {
           </Button>
         </div>
       </div>
+=======
+    <DashboardLayout title="Audit Logs" subtitle="Track and monitor all system activities">
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Events (7d)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.total_events || 0}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Create Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{stats.create_count || 0}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Update Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{stats.update_count || 0}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Delete Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{stats.delete_count || 0}</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+>>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <CardTitle>System Audit Logs</CardTitle>
-              <CardDescription>
-                Detailed records of all system activities and changes
-              </CardDescription>
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <CardTitle>System Audit Logs</CardTitle>
+                <CardDescription>
+                  Detailed records of all system activities and changes
+                </CardDescription>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          </CardHeader>
+          <CardContent>
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -148,147 +238,200 @@ export default function AuditLogs() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </Button>
+              <Select value={actionFilter} onValueChange={setActionFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Actions</SelectItem>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="update">Update</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
+                  <SelectItem value="login">Login</SelectItem>
+                  <SelectItem value="logout">Logout</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={resourceFilter} onValueChange={setResourceFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Resource" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Resources</SelectItem>
+                  <SelectItem value="project">Projects</SelectItem>
+                  <SelectItem value="task">Tasks</SelectItem>
+                  <SelectItem value="user">Users</SelectItem>
+                  <SelectItem value="inventory">Inventory</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>IP Address</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLogs.length > 0 ? (
-                  filteredLogs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="whitespace-nowrap">
-                        {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
-                      </TableCell>
-                      <TableCell className="font-medium">{log.action}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>{log.userEmail}</span>
-                          <span className="text-xs text-muted-foreground">{log.userId}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{log.ipAddress}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(log.status)}`}>
-                          {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setSelectedLog(log)}
-                        >
-                          <FileText className="h-4 w-4" />
-                          <span className="sr-only">View Details</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No logs found matching your criteria
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Showing <span className="font-medium">1</span> to <span className="font-medium">{Math.min(10, filteredLogs.length)}</span> of{' '}
-              <span className="font-medium">{filteredLogs.length}</span> results
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" disabled>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm">
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Log Details Dialog */}
-      {selectedLog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg w-full max-w-2xl p-6 space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-medium">Log Details</h3>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(selectedLog.timestamp), 'PPpp')}
-                </p>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setSelectedLog(null)}
-              >
-                ×
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium">Action</h4>
-                <p className="text-sm">{selectedLog.action}</p>
+            ) : error ? (
+              <div className="text-center py-8 text-destructive">
+                Failed to load audit logs. <Button variant="link" onClick={() => refetch()}>Retry</Button>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+            ) : (
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Timestamp</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Resource</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>IP Address</TableHead>
+                        <TableHead className="w-[100px]">Details</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLogs.length > 0 ? (
+                        filteredLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell className="whitespace-nowrap">
+                              {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getActionColor(log.action)}>
+                                {log.action}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-medium">{log.resource}</span>
+                              {log.resource_id && (
+                                <span className="text-xs text-muted-foreground ml-1">#{log.resource_id}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span>{log.user_email || `User #${log.user_id}`}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{log.ip_address || '-'}</TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setSelectedLog(log)}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            No logs found matching your criteria
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Page {page + 1} • Showing {filteredLogs.length} results
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      disabled={page === 0}
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled={filteredLogs.length < limit}
+                      onClick={() => setPage(p => p + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Log Details Dialog */}
+        {selectedLog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setSelectedLog(null)}>
+            <div className="bg-background rounded-lg w-full max-w-2xl p-6 space-y-4 m-4" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="font-medium">User</h4>
-                  <p className="text-sm">{selectedLog.userEmail}</p>
-                  <p className="text-xs text-muted-foreground">{selectedLog.userId}</p>
+                  <h3 className="text-lg font-medium">Log Details</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedLog.timestamp), 'PPpp')}
+                  </p>
                 </div>
-                <div>
-                  <h4 className="font-medium">IP Address</h4>
-                  <p className="text-sm">{selectedLog.ipAddress}</p>
-                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setSelectedLog(null)}
+                >
+                  ×
+                </Button>
               </div>
               
-              <div>
-                <h4 className="font-medium">Status</h4>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedLog.status)}`}>
-                  {selectedLog.status.charAt(0).toUpperCase() + selectedLog.status.slice(1)}
-                </span>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Action</h4>
+                    <Badge className={getActionColor(selectedLog.action)}>
+                      {selectedLog.action}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Resource</h4>
+                    <p className="text-sm">{selectedLog.resource} #{selectedLog.resource_id}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">User</h4>
+                    <p className="text-sm">{selectedLog.user_email || `User #${selectedLog.user_id}`}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">IP Address</h4>
+                    <p className="text-sm">{selectedLog.ip_address || 'N/A'}</p>
+                  </div>
+                </div>
+
+                {selectedLog.details && (
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Details</h4>
+                    <p className="text-sm">{selectedLog.details}</p>
+                  </div>
+                )}
+                
+                {(selectedLog.old_values || selectedLog.new_values) && (
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Changes</h4>
+                    <div className="bg-muted/50 p-4 rounded-md mt-1">
+                      <pre className="text-sm overflow-auto max-h-60">
+                        {JSON.stringify({ old: selectedLog.old_values, new: selectedLog.new_values }, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
               </div>
               
-              <div>
-                <h4 className="font-medium">Details</h4>
-                <div className="bg-muted/50 p-4 rounded-md mt-1">
-                  <pre className="text-sm overflow-auto max-h-60">
-                    {JSON.stringify(selectedLog, null, 2)}
-                  </pre>
-                </div>
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={() => setSelectedLog(null)}>Close</Button>
               </div>
-            </div>
-            
-            <div className="flex justify-end pt-4 border-t">
-              <Button onClick={() => setSelectedLog(null)}>Close</Button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </DashboardLayout>
   );
 }
