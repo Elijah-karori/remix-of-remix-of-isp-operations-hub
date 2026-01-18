@@ -586,3 +586,156 @@ export const useNcbaPay = () => {
     },
   });
 };
+
+// BOM Variances Hooks
+export const usePendingVariances = (limit = 50) => {
+  return useQuery<BOMVarianceOut[]>({
+    queryKey: ['finance', 'bom-variances', 'pending', limit],
+    queryFn: () => financeApi.pendingVariances(limit),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useApproveVariance = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ varianceId, approved, approver_id, notes }: { varianceId: number; approved: boolean; approver_id: number; notes?: string }) =>
+      financeApi.approveVariance(varianceId, { approved, approver_id, notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance', 'bom-variances', 'pending'] });
+      toast.success('BOM Variance updated successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to update BOM Variance: ${error.message || 'Unknown error'}`);
+    },
+  });
+};
+
+// Project Financials Hooks (Some from ProjectDetail, added others)
+export const useProjectBudgetSummary = (projectId: number) => {
+  return useQuery<BudgetSummary>({
+    queryKey: ['finance', 'project', projectId, 'budget-summary'],
+    queryFn: () => financeApi.projectBudgetSummary(projectId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!projectId,
+  });
+};
+
+export const useProjectFinancials = (projectId: number) => {
+  return useQuery<ProjectFinancialsOut>({
+    queryKey: ['finance', 'project', projectId, 'financials'],
+    queryFn: () => financeApi.projectFinancials(projectId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!projectId,
+  });
+};
+
+export const useTrackProjectCosts = (projectId: number) => {
+  return useQuery<any>({ // Assuming return type is an object with cost details
+    queryKey: ['finance', 'project', projectId, 'costs'],
+    queryFn: () => financeApi.trackProjectCosts(projectId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!projectId,
+  });
+};
+
+export const useCalculateBudgetVariance = (projectId: number) => {
+  return useQuery<any>({ // Assuming return type is a variance object/number
+    queryKey: ['finance', 'project', projectId, 'variance'],
+    queryFn: () => financeApi.calculateBudgetVariance(projectId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!projectId,
+  });
+};
+
+export const useForecastCompletionCost = (projectId: number) => {
+  return useQuery<any>({ // Assuming return type is a cost forecast
+    queryKey: ['finance', 'project', projectId, 'forecast'],
+    queryFn: () => financeApi.forecastCompletionCost(projectId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!projectId,
+  });
+};
+
+export const useProjectProfitability = (projectId: number) => {
+  return useQuery<any>({ // Assuming return type for ProjectProfitability
+    queryKey: ['finance', 'project', projectId, 'profitability'],
+    queryFn: () => financeApi.projectProfitability(projectId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!projectId,
+  });
+};
+
+export const useAllocateProjectBudget = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, data }: { projectId: number; data: any }) => financeApi.allocateProjectBudget(projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance', 'project'] });
+      toast.success('Project budget allocated successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to allocate project budget: ${error.message || 'Unknown error'}`);
+    },
+  });
+};
+
+export const useCompleteProjectFinancial = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: number) => financeApi.completeProjectFinancial(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance', 'project'] });
+      toast.success('Project financial completed successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to complete project financial: ${error.message || 'Unknown error'}`);
+    },
+  });
+};
+
+// Financial Analytics Hooks
+export const useFinancialSnapshot = () => {
+  return useQuery<FinancialSnapshotResponse>({
+    queryKey: ['finance', 'snapshot'],
+    queryFn: () => financeApi.snapshot(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useBudgetAllocationRecommendation = (totalBudget: number, periodMonths = 12) => {
+  return useQuery<any>({ // Assuming return type for recommendation
+    queryKey: ['finance', 'budget-allocation-recommendation', totalBudget, periodMonths],
+    queryFn: () => financeApi.budgetAllocationRecommendation(totalBudget, periodMonths),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!totalBudget,
+  });
+};
+
+export const useReconcileAccounts = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { period_start: string; period_end: string }) => financeApi.reconcileAccounts(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance'] }); // Invalidate all finance queries
+      toast.success('Accounts reconciled successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to reconcile accounts: ${error.message || 'Unknown error'}`);
+    },
+  });
+};
+
+export const useProcessTaskCompletionFinancial = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: number) => financeApi.completeTaskFinancial(taskId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      toast.success('Task financial completion processed successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to process task financial completion: ${error.message || 'Unknown error'}`);
+    },
+  });
+};

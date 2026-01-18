@@ -22,12 +22,12 @@ import {
   ListTodo,
   ReceiptText,
   CreditCard,
-  Smartphone, // New import
-  Banknote,   // New import
+  Smartphone,
+  Banknote,
   Wifi,
   Menu,
-  FileCheck, // New import for Tester Coverage
-  Eye,       // New import for Auditor Heatmap
+  FileCheck,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -39,7 +39,7 @@ interface NavItem {
   href?: string;
   badge?: string;
   children?: NavItem[];
-  permission?: string; // New: permission required to see this item
+  permission?: string;
 }
 
 const mainNavItems: NavItem[] = [
@@ -49,16 +49,16 @@ const mainNavItems: NavItem[] = [
   {
     label: "Finance",
     icon: Wallet,
-    href: "/finance",
+    href: "/finance", // Main Finance page
     permission: "finance:read",
     children: [
-      { label: "Overview", icon: LayoutDashboard, href: "/finance" },
-      { label: "Budgets", icon: FolderKanban, href: "/finance/budgets", permission: "finance:budgets:read" },
-      { label: "Invoices", icon: ReceiptText, href: "/finance/invoices", permission: "finance:invoices:read" },
-      { label: "Accounts", icon: CreditCard, href: "/finance/accounts", permission: "finance:accounts:read" },
-      { label: "M-Pesa", icon: Smartphone, href: "/finance/mpesa", permission: "finance:mpesa:read" },
-      { label: "NCBA Bank", icon: Banknote, href: "/finance/ncba", permission: "finance:ncba:read" },
-      { label: "Reports", icon: FileText, href: "/finance/reports", permission: "finance:reports:read" },
+      // These children now correspond to the tab values in src/pages/Finance.tsx
+      { label: "Overview", icon: LayoutDashboard, href: "/finance?tab=overview", permission: "finance:read" },
+      { label: "Transactions", icon: ReceiptText, href: "/finance?tab=transactions", permission: "finance:mpesa:read" },
+      { label: "Invoices", icon: FileText, href: "/finance?tab=invoices", permission: "finance:invoices:read" },
+      { label: "M-Pesa", icon: Smartphone, href: "/finance?tab=mpesa", permission: "finance:mpesa:read" },
+      { label: "Budgeting & Accounts", icon: Banknote, href: "/finance?tab=budgeting", permission: "finance:accounts:read" },
+      { label: "Analytics & Reports", icon: BarChart3, href: "/finance?tab=analytics", permission: "finance:reports:read" },
     ]
   },
   { label: "Inventory", icon: Package, href: "/inventory", permission: "inventory:read" },
@@ -88,9 +88,8 @@ const mainNavItems: NavItem[] = [
   {
     label: "Marketing",
     icon: BarChart3,
-    href: "/marketing", // Main marketing page for campaigns list
+    href: "/marketing",
     permission: "marketing:read",
-    // Campaigns child is removed as the main /marketing page now lists campaigns
   }
 ];
 
@@ -110,21 +109,24 @@ export function Sidebar() {
   const { hasPermission } = useAuth();
 
   const isActive = (href?: string, children?: NavItem[]) => {
-    if (children) {
-      return children.some(child => location.pathname.startsWith(child.href || ''));
+    // If it has children, check if any child's href matches the current path
+    if (children && href) { // Check parent href for active state
+        return location.pathname.startsWith(href) || children.some(child => {
+            const childHref = child.href?.split('?')[0]; // Compare path only, ignore query params for child active state
+            return location.pathname.startsWith(childHref || '') && location.pathname !== '/';
+        });
     }
+    // For single items, compare paths. For / (dashboard), exact match.
     if (href === "/") return location.pathname === "/";
     return location.pathname.startsWith(href || '');
   };
 
+
   const filterNavItems = (items: NavItem[]) => {
     return items.filter(item => {
-      // If no permission specified, show to everyone
       if (!item.permission) return true;
-      // Check permission
       return hasPermission(item.permission);
     }).map(item => {
-      // Also filter children if they exist
       if (item.children) {
         return {
           ...item,
@@ -178,25 +180,33 @@ export function Sidebar() {
           )}
           <div className="mt-2 space-y-1">
             {filteredMainNav.map((item) => {
-              const [isOpen, setIsOpen] = useState(() => isActive(undefined, item.children)); // State for each collapsible
-              useEffect(() => { // Update isOpen when location changes
-                setIsOpen(isActive(undefined, item.children));
-              }, [location.pathname, item.children]);
+              // Ensure consistent open state handling
+              const [isOpen, setIsOpen] = useState(() => {
+                // Determine initial open state based on whether any child or the parent is active
+                return isActive(item.href, item.children);
+              });
+
+              useEffect(() => {
+                // Update open state if location changes and it matches a child or parent
+                setIsOpen(isActive(item.href, item.children));
+              }, [location.pathname, item.href, item.children]);
+
 
               return item.children ? (
                 <Collapsible key={item.label} open={isOpen} onOpenChange={setIsOpen}>
                   <CollapsibleTrigger asChild>
-                    <div
+                    <Link
+                      to={item.href || ''}
                       className={cn(
                         "nav-item group",
-                        isActive(undefined, item.children) && "nav-item-active",
+                        isActive(item.href, item.children) && "nav-item-active", // Check if parent or any child is active
                         collapsed && "justify-center px-2"
                       )}
                     >
                       <item.icon
                         className={cn(
                           "w-5 h-5 flex-shrink-0 transition-colors",
-                          isActive(undefined, item.children) ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                          isActive(item.href, item.children) ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                         )}
                       />
                       {!collapsed && (
@@ -205,29 +215,33 @@ export function Sidebar() {
                           <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
                         </>
                       )}
-                    </div>
+                    </Link>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="pl-6 space-y-1"> {/* Indent children */}
-                      {item.children.map(child => (
+                      {item.children.map(child => {
+                         const childPath = child.href?.split('?')[0]; // Extract path without query params
+                         const isChildActive = location.pathname === childPath && location.search === child.href?.split('?')[1];
+                         
+                        return (
                         <Link
                           key={child.href}
                           to={child.href || ''}
                           className={cn(
                             "nav-item group text-sm",
-                            isActive(child.href) && "nav-item-active",
+                            isChildActive && "nav-item-active", // Use isChildActive here
                             collapsed && "justify-center px-2"
                           )}
                         >
                           <child.icon
                             className={cn(
                               "w-4 h-4 flex-shrink-0 transition-colors",
-                              isActive(child.href) ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                              isChildActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground" // Use isChildActive here
                             )}
                           />
                           {!collapsed && <span className="flex-1">{child.label}</span>}
                         </Link>
-                      ))}
+                      )})}
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
