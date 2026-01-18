@@ -171,7 +171,15 @@ export function useCreateOrder() {
 export function useInventoryValuation() {
   return useQuery({
     queryKey: ["inventory", "valuation"],
-    queryFn: () => inventoryApi.valuation(),
+    queryFn: async () => {
+      try {
+        const data = await inventoryApi.valuation();
+        return data || { total_value: 0, total_products: 0 };
+      } catch (error) {
+        console.error("Failed to fetch inventory valuation:", error);
+        return { total_value: 0, total_products: 0 };
+      }
+    },
     staleTime: 3600000, // 1 hour
   });
 }

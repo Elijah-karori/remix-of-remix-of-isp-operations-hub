@@ -35,6 +35,10 @@ import Accounts from "./pages/Finance/Accounts";   // New import
 import Reports from "./pages/Finance/Reports";
 import Mpesa from "./pages/Finance/Mpesa";     // New import
 import Ncba from "./pages/Finance/Ncba";       // New import
+import HRIndex from "./pages/HR/Index";
+import Employees from "./pages/HR/Employees";
+import Payroll from "./pages/HR/Payroll";
+import TechniciansIndex from "./pages/Technicians/Index";
 
 const queryClient = new QueryClient();
 
@@ -173,6 +177,38 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Inventory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hr"
+              element={
+                <ProtectedRoute>
+                  <HRIndex />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hr/employees"
+              element={
+                <ProtectedRoute>
+                  <Employees />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hr/payroll"
+              element={
+                <ProtectedRoute>
+                  <Payroll />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technicians"
+              element={
+                <ProtectedRoute>
+                  <TechniciansIndex />
                 </ProtectedRoute>
               }
             />

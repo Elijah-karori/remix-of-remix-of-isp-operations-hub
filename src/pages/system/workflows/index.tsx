@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  ReactFlow, 
-  Node, 
-  Edge, 
-  Connection, 
-  Controls, 
-  Background, 
+import {
+  ReactFlow,
+  Node,
+  Edge,
+  Connection,
+  Controls,
+  Background,
   Panel,
   applyNodeChanges,
   applyEdgeChanges,
@@ -78,7 +78,7 @@ export default function Workflows() {
   // Convert workflow steps to ReactFlow nodes/edges
   const loadWorkflowToEditor = (workflow: WorkflowDefinitionRead) => {
     setSelectedWorkflow(workflow);
-    
+
     // Clear existing nodes and edges
     setNodes([]);
     setEdges([]);
@@ -135,24 +135,70 @@ export default function Workflows() {
     setNodes((nds) => [...nds, newNode]);
   };
 
-  const handleSaveWorkflow = () => { // Renamed to avoid conflict
+  const handleSaveWorkflow = async () => {
+    if (!selectedWorkflow && !nodes.length) {
+      toast.error("Please add some nodes to your workflow");
+      return;
+    }
+
     toast.info("Saving workflow...");
-    // Implement actual API call to save workflow
-    console.log("Nodes:", nodes);
-    console.log("Edges:", edges);
-    // workflowApi.saveWorkflow(selectedWorkflow.id, { nodes, edges });
-    setTimeout(() => {
-      toast.success("Workflow saved successfully");
-    }, 1000);
+
+    // Map ReactFlow nodes/edges to API format
+    const steps = nodes.map(node => {
+      const nextSteps = edges
+        .filter(edge => edge.source === node.id)
+        .map(edge => edge.target);
+
+      return {
+        id: node.id,
+        type: node.type === 'input' ? 'start' : node.type === 'output' ? 'end' : (node.style?.backgroundColor === '#fde047' ? 'approval' : 'task'),
+        name: node.data.label as string,
+        next_steps: nextSteps,
+      };
+    });
+
+    try {
+      if (selectedWorkflow) {
+        await workflowApi.updateGraph(selectedWorkflow.id, {
+          name: selectedWorkflow.name,
+          description: selectedWorkflow.description,
+          trigger_type: selectedWorkflow.trigger_type,
+          steps,
+        });
+        toast.success("Workflow saved successfully");
+      } else {
+        // Handle new workflow creation
+        const name = prompt("Enter workflow name:");
+        if (!name) return;
+
+        const newWorkflow = await workflowApi.createGraph({
+          name,
+          trigger_type: 'manual', // Default
+          steps,
+        });
+        setSelectedWorkflow(newWorkflow);
+        toast.success("New workflow created and saved");
+        refetchWorkflows();
+      }
+    } catch (error: any) {
+      toast.error(`Failed to save workflow: ${error.message}`);
+    }
   };
 
-  const handlePublishWorkflow = () => { // Renamed to avoid conflict
+  const handlePublishWorkflow = async () => {
+    if (!selectedWorkflow) {
+      toast.error("Please save your workflow before publishing");
+      return;
+    }
+
     toast.info("Publishing workflow...");
-    // Implement actual API call to publish workflow
-    // workflowApi.publishWorkflow(selectedWorkflow.id);
-    setTimeout(() => {
+    try {
+      await workflowApi.publish(selectedWorkflow.id);
       toast.success("Workflow published successfully");
-    }, 1000);
+      refetchWorkflows();
+    } catch (error: any) {
+      toast.error(`Failed to publish workflow: ${error.message}`);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -245,8 +291,8 @@ export default function Workflows() {
                           {format(new Date(workflow.created_at), 'MMM d, yyyy')}
                         </TableCell>
                         <TableCell>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             onClick={() => loadWorkflowToEditor(workflow)}
                           >
@@ -311,8 +357,8 @@ export default function Workflows() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="default"
                               onClick={() => approveMutation.mutate({ id: instance.id })}
                               disabled={approveMutation.isPending}
@@ -320,8 +366,8 @@ export default function Workflows() {
                               <CheckCircle2 className="h-4 w-4 mr-1" />
                               Approve
                             </Button>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="destructive"
                               onClick={() => rejectMutation.mutate({ id: instance.id })}
                               disabled={rejectMutation.isPending}

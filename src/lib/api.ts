@@ -110,13 +110,43 @@ export async function apiFetch<T>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "An error occurred" }));
-
-    // Handle 401 Unauthorized - clear token
+    // Handle 401 Unauthorized - try refresh
     if (response.status === 401 && config.handle401) {
+      try {
+        // Try to refresh once
+        const refreshResponse = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (refreshResponse.ok) {
+          const data: Token = await refreshResponse.json();
+          setAccessToken(data.access_token);
+
+          // Retry the original request
+          const retryHeaders = {
+            ...headers,
+            "Authorization": `Bearer ${data.access_token}`
+          };
+          const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers: retryHeaders,
+          });
+
+          if (retryResponse.ok) {
+            return retryResponse.json();
+          }
+        }
+      } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+      }
+
+      // If refresh failed or retry failed, logout
       setAccessToken(null);
       throw new Error("Session expired. Please log in again.");
     }
+
+    const error = await response.json().catch(() => ({ detail: "An error occurred" }));
 
     // Handle 403 Forbidden
     if (response.status === 403) {
@@ -206,15 +236,11 @@ export const authApi = {
     return response;
   },
 
-  verifyMagicLink: async (token: string) => {
-    setAccessToken(token);
-    try {
-      await authApi.me();
-      return { access_token: token, token_type: "bearer" };
-    } catch (error) {
-      setAccessToken(null);
-      throw error;
-    }
+  verifyMagicLink: async (token: string): Promise<Token> => {
+    return apiFetch<Token>(`/api/v1/auth/passwordless/verify?token=${encodeURIComponent(token)}`).then(data => {
+      setAccessToken(data.access_token);
+      return data;
+    });
   },
 
   me: async (): Promise<UserOut> => {
@@ -487,11 +513,11 @@ export const inventoryApi = {
   optimizeStockLevels: (productId: number, targetServiceLevel = 0.95) =>
     apiFetch(`/api/v1/inventory/${productId}/optimize-levels?target_service_level=${targetServiceLevel}`),
 
-  turnoverAnalysis: (days = 90) =>
-    apiFetch(`/api/v1/inventory/turnover-analysis?days=${days}`),
+  turnoverAnalysis: (days = 90): Promise<any[]> =>
+    apiFetch<any[]>(`/api/v1/inventory/turnover-analysis?days=${days}`),
 
-  deadStock: (daysThreshold = 90) =>
-    apiFetch(`/api/v1/inventory/dead-stock?days_threshold=${daysThreshold}`),
+  deadStock: (daysThreshold = 90): Promise<any[]> =>
+    apiFetch<any[]>(`/api/v1/inventory/dead-stock?days_threshold=${daysThreshold}`),
 
   autoReorder: (productId: number, data: any) =>
     apiFetch(`/api/v1/inventory/${productId}/auto-reorder`, {
@@ -499,8 +525,8 @@ export const inventoryApi = {
       body: JSON.stringify(data)
     }),
 
-  valuation: () =>
-    apiFetch("/api/v1/inventory/valuation"),
+  valuation: (): Promise<any> =>
+    apiFetch<any>("/api/v1/inventory/valuation"),
 };
 
 // Product Search & Procurement
@@ -570,7 +596,7 @@ export const procurementApi = {
   spendingTrends: (days = 90, groupBy = "supplier") =>
     apiFetch(`/api/v1/procurement/spending-trends?days=${days}&group_by=${groupBy}`),
 
-  // Legacy
+  // Legacy (Keeping for compatibility but fixing paths)
   create: (data: any) =>
     apiFetch("/api/v1/procurement/", {
       method: "POST",
@@ -578,12 +604,12 @@ export const procurementApi = {
     }),
 
   approve: (purchaseId: number, approve: boolean, comment?: string) =>
-    apiFetch(`/api/v1/procurement/${purchaseId}/approve?approve=${approve}${comment ? `&comment=${encodeURIComponent(comment)}` : ''}`, {
+    apiFetch(`/api/v1/procurement/orders/${purchaseId}/approve?approved=${approve}${comment ? `&notes=${encodeURIComponent(comment)}` : ''}`, {
       method: "POST"
     }),
 
   markOrdered: (purchaseId: number) =>
-    apiFetch(`/api/v1/procurement/${purchaseId}/mark-ordered`, { method: "POST" }),
+    apiFetch(`/api/v1/procurement/orders/${purchaseId}/mark-ordered`, { method: "POST" }),
 };
 
 // Scrapers endpoints
@@ -1346,8 +1372,10 @@ export const managementApi = {
   resolveFuzzyRole: (roleName: string, threshold = 0.7) =>
     apiFetch<FuzzyMatchResult[]>(`/api/v1/management/rbac/roles/resolve-fuzzy?role_name=${encodeURIComponent(roleName)}&threshold=${threshold}`),
 
-  analyzeIndependentRole: (roleName: string) =>
-    apiFetch<IndependentRoleOut>(`/api/v1/management/rbac/roles/analyze-independent?role_name=${encodeURIComponent(roleName)}`),
+  analyzeIndependentRole: (roleName?: string) => {
+    const params = roleName ? `?role_name=${encodeURIComponent(roleName)}` : '';
+    return apiFetch<IndependentRoleOut[]>(`/api/v1/management/rbac/roles/analyze-independent${params}`);
+  },
 
   // Access Policies
   listAccessPolicies: () =>

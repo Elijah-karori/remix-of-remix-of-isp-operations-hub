@@ -237,8 +237,10 @@ export interface StockMovement {
 
 export interface TechnicianKPI {
     technician_id: number;
-    technician_name: string;
     tasks_completed: number;
+    completed_tasks: number; // Some endpoints might use this
+    avg_resolution_time: number;
+    weighted_score: number;
     average_rating: number;
     on_time_rate: number;
     efficiency_score: number;
@@ -258,15 +260,18 @@ export interface CustomerSatisfaction {
 export interface EmployeeProfileResponse {
     id: number;
     user_id: number;
-    employee_number: string;
-    department?: string;
-    position?: string;
-    joining_date?: string;
-    status: string;
+    employee_code: string;
     engagement_type: string;
-    base_salary?: number;
+    department?: string | null;
+    designation?: string | null;
+    hire_date: string;
+    contract_end_date?: string | null;
+    termination_date?: string | null;
+    is_active: boolean;
     user?: UserOut;
 }
+
+export type EngagementType = 'FULL_TIME' | 'CONTRACT' | 'TASK_BASED' | 'SERVICE_BASED' | 'HYBRID';
 
 export interface AttendanceRecordResponse {
     id: number;
@@ -281,12 +286,15 @@ export interface AttendanceRecordResponse {
 export interface PayoutResponse {
     id: number;
     employee_id: number;
-    amount: number;
-    currency: string;
+    gross_amount: string | number;
+    net_amount: string | number;
     status: string;
     period_start: string;
     period_end: string;
-    payout_date?: string;
+    approved_by?: number | null;
+    payment_method?: string | null;
+    payment_reference?: string | null;
+    paid_at?: string | null;
     employee?: EmployeeProfileResponse;
 }
 

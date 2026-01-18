@@ -33,18 +33,18 @@ export default function Permissions() {
 
   const { data: hierarchy, isLoading: loadingHierarchy, refetch: refetchHierarchy } = useQuery<RoleHierarchyOut[]>({
     queryKey: ['management', 'rbac', 'hierarchy'],
-    queryFn: () => managementApi.getHierarchy(),
+    queryFn: () => managementApi.getRoleHierarchy(),
     staleTime: 60000,
   });
 
   const { data: independentRoles, isLoading: loadingIndependent } = useQuery<IndependentRoleOut[]>({
     queryKey: ['management', 'rbac', 'independent-roles'],
-    queryFn: () => managementApi.getIndependentRoles(),
+    queryFn: () => managementApi.analyzeIndependentRole(),
     staleTime: 60000,
   });
 
   // Filter logic based on the merged branch's API response structure (myPermissions)
-  const filteredPermissions = myPermissions?.permissions?.filter(permission => 
+  const filteredPermissions = myPermissions?.permissions?.filter(permission =>
     permission.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     permission.codename?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     permission.description?.toLowerCase().includes(searchTerm.toLowerCase()) // Added description search
@@ -59,10 +59,9 @@ export default function Permissions() {
 
   const renderRoleNode = (node: RoleHierarchyOut, depth: number = 0) => (
     <div key={node.role.id} className="mb-2">
-      <div 
-        className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 ${
-          selectedRole && 'role' in selectedRole && selectedRole.role?.id === node.role.id ? 'bg-primary/10 border-primary' : ''
-        }`}
+      <div
+        className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 ${selectedRole && 'role' in selectedRole && selectedRole.role?.id === node.role.id ? 'bg-primary/10 border-primary' : ''
+          }`}
         style={{ marginLeft: `${depth * 24}px` }}
         onClick={() => setSelectedRole(node)}
       >
@@ -187,11 +186,10 @@ export default function Permissions() {
                       <h4 className="font-medium mb-3 text-sm text-muted-foreground">Independent Roles</h4>
                       <div className="space-y-2">
                         {independentRoles.map(role => (
-                          <div 
+                          <div
                             key={role.id}
-                            className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 ${
-                              selectedRole && 'id' in selectedRole && selectedRole.id === role.id ? 'bg-primary/10 border-primary' : ''
-                            }`}
+                            className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 ${selectedRole && 'id' in selectedRole && selectedRole.id === role.id ? 'bg-primary/10 border-primary' : ''
+                              }`}
                             onClick={() => setSelectedRole(role)}
                           >
                             <Shield className="h-4 w-4 text-amber-500" />
@@ -223,7 +221,7 @@ export default function Permissions() {
                           {'role' in selectedRole ? selectedRole.role.name : selectedRole.name}
                         </p>
                       </div>
-                      
+
                       {'role' in selectedRole ? (
                         <>
                           {selectedRole.role.description && (

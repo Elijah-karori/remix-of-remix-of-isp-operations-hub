@@ -5,10 +5,12 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 interface StatCardProps {
   title: string;
   value: string | number;
-  change?: number;
+  change?: number | string;
   changeLabel?: string;
-  icon: ReactNode;
-  variant?: "default" | "primary" | "success" | "warning" | "destructive";
+  icon: React.ElementType;
+  variant?: "default" | "primary" | "success" | "warning" | "destructive" | "blue" | "green" | "orange" | "red" | "purple";
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 export function StatCard({
@@ -16,10 +18,12 @@ export function StatCard({
   value,
   change,
   changeLabel,
-  icon,
+  icon: Icon,
   variant = "default",
+  className,
+  style,
 }: StatCardProps) {
-  const isPositive = change && change > 0;
+  const isPositive = typeof change === 'number' ? change > 0 : !change?.toString().includes("-");
 
   const variantStyles = {
     default: "border-border",
@@ -27,6 +31,11 @@ export function StatCard({
     success: "border-success/30 bg-success/5",
     warning: "border-warning/30 bg-warning/5",
     destructive: "border-destructive/30 bg-destructive/5",
+    blue: "border-blue-500/30 bg-blue-500/5",
+    green: "border-green-500/30 bg-green-500/5",
+    orange: "border-orange-500/30 bg-orange-500/5",
+    red: "border-red-500/30 bg-red-500/5",
+    purple: "border-purple-500/30 bg-purple-500/5",
   };
 
   const iconStyles = {
@@ -35,10 +44,15 @@ export function StatCard({
     success: "bg-success/20 text-success",
     warning: "bg-warning/20 text-warning",
     destructive: "bg-destructive/20 text-destructive",
+    blue: "bg-blue-500/20 text-blue-500",
+    green: "bg-green-500/20 text-green-500",
+    orange: "bg-orange-500/20 text-orange-500",
+    red: "bg-red-500/20 text-red-500",
+    purple: "bg-purple-500/20 text-purple-500",
   };
 
   return (
-    <div className={cn("stat-card animate-fade-in", variantStyles[variant])}>
+    <div className={cn("stat-card animate-fade-in", variantStyles[variant as keyof typeof variantStyles], className)} style={style}>
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -46,18 +60,18 @@ export function StatCard({
           {change !== undefined && (
             <div className="flex items-center gap-1">
               {isPositive ? (
-                <TrendingUp className="w-4 h-4 text-success" />
+                <TrendingUp className="w-4 h-4 text-green-500" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-destructive" />
+                <TrendingDown className="w-4 h-4 text-red-500" />
               )}
               <span
                 className={cn(
                   "text-sm font-medium",
-                  isPositive ? "text-success" : "text-destructive"
+                  isPositive ? "text-green-500" : "text-red-500"
                 )}
               >
-                {isPositive ? "+" : ""}
-                {change}%
+                {typeof change === 'number' && change > 0 ? "+" : ""}
+                {change}{typeof change === 'number' ? "%" : ""}
               </span>
               {changeLabel && (
                 <span className="text-sm text-muted-foreground">{changeLabel}</span>
@@ -65,7 +79,9 @@ export function StatCard({
             </div>
           )}
         </div>
-        <div className={cn("p-3 rounded-xl", iconStyles[variant])}>{icon}</div>
+        <div className={cn("p-3 rounded-xl", iconStyles[variant as keyof typeof iconStyles])}>
+          <Icon className="w-5 h-5" />
+        </div>
       </div>
     </div>
   );

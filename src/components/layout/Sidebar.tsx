@@ -28,59 +28,75 @@ import {
   Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"; // New imports
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   label: string;
   icon: React.ElementType;
-  href?: string; // Make href optional for parent items
+  href?: string;
   badge?: string;
-  children?: NavItem[]; // Add children for nested items
+  children?: NavItem[];
+  permission?: string; // New: permission required to see this item
 }
 
 const mainNavItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-  { label: "Projects", icon: FolderKanban, href: "/projects" },
-  { label: "Tasks", icon: CheckSquare, href: "/tasks", badge: "12" },
-  { 
-    label: "Finance", 
-    icon: Wallet, 
-    href: "/finance", // Parent link to Finance Overview
+  { label: "Projects", icon: FolderKanban, href: "/projects", permission: "projects:read" },
+  { label: "Tasks", icon: CheckSquare, href: "/tasks", badge: "12", permission: "tasks:read" },
+  {
+    label: "Finance",
+    icon: Wallet,
+    href: "/finance",
+    permission: "finance:read",
     children: [
       { label: "Overview", icon: LayoutDashboard, href: "/finance" },
-      { label: "Budgets", icon: FolderKanban, href: "/finance/budgets" },
-      { label: "Invoices", icon: ReceiptText, href: "/finance/invoices" },
-      { label: "Accounts", icon: CreditCard, href: "/finance/accounts" },
-      { label: "M-Pesa", icon: Smartphone, href: "/finance/mpesa" }, // New M-Pesa item
-      { label: "NCBA Bank", icon: Banknote, href: "/finance/ncba" }, // New NCBA Bank item
-      { label: "Reports", icon: FileText, href: "/finance/reports" },
+      { label: "Budgets", icon: FolderKanban, href: "/finance/budgets", permission: "finance:budgets:read" },
+      { label: "Invoices", icon: ReceiptText, href: "/finance/invoices", permission: "finance:invoices:read" },
+      { label: "Accounts", icon: CreditCard, href: "/finance/accounts", permission: "finance:accounts:read" },
+      { label: "M-Pesa", icon: Smartphone, href: "/finance/mpesa", permission: "finance:mpesa:read" },
+      { label: "NCBA Bank", icon: Banknote, href: "/finance/ncba", permission: "finance:ncba:read" },
+      { label: "Reports", icon: FileText, href: "/finance/reports", permission: "finance:reports:read" },
     ]
   },
-  { label: "Inventory", icon: Package, href: "/inventory" },
-  { label: "HR", icon: Users, href: "/hr" },
-  { label: "Technicians", icon: Wrench, href: "/technicians" },
-    {
-      label: "CRM",
-      icon: UserCircle,
-      href: "/crm", // Add href to CRM parent
-      children: [
-        { label: "Leads", icon: UserCircle, href: "/crm/leads" },
-        { label: "Deals", icon: DollarSign, href: "/crm/deals" },
-        { label: "Activities", icon: ListTodo, href: "/crm/activities" },
-      ]
-    },];
+  { label: "Inventory", icon: Package, href: "/inventory", permission: "inventory:read" },
+  { label: "HR", icon: Users, href: "/hr", permission: "hr:read" },
+  { label: "Technicians", icon: Wrench, href: "/technicians", permission: "technicians:read" },
+  {
+    label: "CRM",
+    icon: UserCircle,
+    href: "/crm",
+    permission: "crm:read",
+    children: [
+      { label: "Leads", icon: UserCircle, href: "/crm/leads", permission: "crm:leads:read" },
+      { label: "Deals", icon: DollarSign, href: "/crm/deals", permission: "crm:deals:read" },
+      { label: "Activities", icon: ListTodo, href: "/crm/activities", permission: "crm:activities:read" },
+    ]
+  },
+  {
+    label: "Marketing",
+    icon: BarChart3,
+    href: "/marketing",
+    permission: "marketing:read",
+    children: [
+      { label: "Campaigns", icon: BarChart3, href: "/marketing/campaigns", permission: "marketing:campaigns:read" },
+      { label: "Leads", icon: Users, href: "/marketing/leads", permission: "marketing:leads:read" },
+    ]
+  }
+];
 
 const systemNavItems: NavItem[] = [
-  { label: "Workflows", icon: GitBranch, href: "/system/workflows" },
-  { label: "Permissions", icon: Shield, href: "/system/permissions" },
-  { label: "Analytics", icon: BarChart3, href: "/system/analytics" },
-  { label: "Audit Logs", icon: FileText, href: "/system/audit" },
-  { label: "Settings", icon: Settings, href: "/system/settings" },
+  { label: "Workflows", icon: GitBranch, href: "/system/workflows", permission: "workflow:read" },
+  { label: "Permissions", icon: Shield, href: "/system/permissions", permission: "rbac:manage" },
+  { label: "Analytics", icon: BarChart3, href: "/system/analytics", permission: "analytics:read" },
+  { label: "Audit Logs", icon: FileText, href: "/system/audit", permission: "audit:read" },
+  { label: "Settings", icon: Settings, href: "/system/settings", permission: "settings:manage" },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { hasPermission } = useAuth();
 
   const isActive = (href?: string, children?: NavItem[]) => {
     if (children) {
@@ -89,6 +105,27 @@ export function Sidebar() {
     if (href === "/") return location.pathname === "/";
     return location.pathname.startsWith(href || '');
   };
+
+  const filterNavItems = (items: NavItem[]) => {
+    return items.filter(item => {
+      // If no permission specified, show to everyone
+      if (!item.permission) return true;
+      // Check permission
+      return hasPermission(item.permission);
+    }).map(item => {
+      // Also filter children if they exist
+      if (item.children) {
+        return {
+          ...item,
+          children: filterNavItems(item.children)
+        };
+      }
+      return item;
+    });
+  };
+
+  const filteredMainNav = filterNavItems(mainNavItems);
+  const filteredSystemNav = filterNavItems(systemNavItems);
 
   return (
     <aside
@@ -129,7 +166,7 @@ export function Sidebar() {
             </span>
           )}
           <div className="mt-2 space-y-1">
-            {mainNavItems.map((item) => {
+            {filteredMainNav.map((item) => {
               const [isOpen, setIsOpen] = useState(() => isActive(undefined, item.children)); // State for each collapsible
               useEffect(() => { // Update isOpen when location changes
                 setIsOpen(isActive(undefined, item.children));
@@ -222,7 +259,7 @@ export function Sidebar() {
             </span>
           )}
           <div className="mt-2 space-y-1">
-            {systemNavItems.map((item) => (
+            {filteredSystemNav.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}

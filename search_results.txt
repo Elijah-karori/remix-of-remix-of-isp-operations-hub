@@ -1,0 +1,31 @@
+
+LineNumber Line
+---------- ----
+      2685                   "/api/v1/inventory/suppliers":  {
+      2810                   "/api/v1/inventory/products":  {
+      3032                   "/api/v1/inventory/products/sync-clickup/{task_id}":  {
+      3082                   "/api/v1/inventory/products/{product_id}/image":  {
+      3190                   "/api/v1/inventory/products/{product_id}":  {
+     10007                   "/api/v1/procurement/smart-order":  {
+     10057                   "/api/v1/procurement/bulk-order":  {
+     10111                   "/api/v1/procurement/price-history/{product_id}":  {
+     10172                   "/api/v1/procurement/alternative-suppliers/{product_id}":  {
+     10232                   "/api/v1/procurement/calculate-cost":  {
+     10318                   "/api/v1/procurement/spending-trends":  {
+     10380                   "/api/v1/inventory/low-stock":  {
+     10432                   "/api/v1/inventory/reorder-predictions":  {
+     10466                   "/api/v1/inventory/{product_id}/reorder-prediction":  {
+     10517                   "/api/v1/inventory/{product_id}/optimize-levels":  {
+     10578                   "/api/v1/inventory/turnover-analysis":  {
+     10634                   "/api/v1/inventory/dead-stock":  {
+     10690                   "/api/v1/inventory/{product_id}/auto-reorder":  {
+     10751                   "/api/v1/inventory/valuation":  {
+     10757                                                                   "summary":  "Get Inventory Valuation",
+     10759                                                                   "operationId":  "get_inventory_valuation_a…
+     10926                   "/api/v1/procurement/orders":  {
+     10974                   "/api/v1/procurement/orders/{purchase_id}/approve":  {
+     11041                   "/api/v1/procurement/orders/pending":  {
+     11073                   "/api/v1/procurement/":  {
+     11121                   "/api/v1/procurement/{purchase_id}/approve":  {
+     11188                   "/api/v1/procurement/{purchase_id}/mark-ordered":  {
+
