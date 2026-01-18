@@ -102,7 +102,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const hasPermission = (permission: string) => {
-    return permissions.includes(permission) || permissions.includes("*");
+    // If the user has global wildcard permission
+    if (permissions.includes("*")) {
+        return true;
+    }
+
+    // If the user has the exact permission
+    if (permissions.includes(permission)) {
+        return true;
+    }
+
+    // Handle "module:action:all" permissions
+    // Example: if permission is "hr:complaints:read"
+    // Extract module: "hr", action: "read"
+    const parts = permission.split(':');
+    if (parts.length === 3) {
+        const module = parts[0];
+        const action = parts[1]; // e.g., 'read', 'create', 'update', 'delete'
+        const allPermissionForAction = `${module}:${action}:all`; // e.g., "hr:read:all"
+        if (permissions.includes(allPermissionForAction)) {
+            return true;
+        }
+    } else if (parts.length === 2) { // e.g. "rbac:manage" where there is no resource specified
+        const module = parts[0];
+        const action = parts[1];
+        const allPermissionForAction = `${module}:${action}:all`; // e.g., "rbac:manage:all"
+        if (permissions.includes(allPermissionForAction)) {
+            return true;
+        }
+    }
+
+    return false;
   };
 
   const refreshUser = async () => {

@@ -1,4 +1,4 @@
-import { useLowStockItems } from "@/hooks/use-inventory";
+import { useLowStockItems, useReorderPredictions, useAutoReorderProduct } from "@/hooks/use-inventory"; // Import useReorderPredictions and useAutoReorderProduct
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,17 +12,49 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle, ShoppingCart, RefreshCw, Download } from "lucide-react";
+import { AlertTriangle, ShoppingCart, RefreshCw, Download, Zap, CalendarDays } from "lucide-react"; // Added Zap and CalendarDays
 import { toast } from "sonner";
 import { exportToExcel } from "@/lib/export";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { PurchaseOrderForm } from "@/components/dashboard/forms/PurchaseOrderForm"; // Import PurchaseOrderForm
 
 export function LowStockTab() {
   const { data: lowStockItems, isLoading, error, refetch } = useLowStockItems();
+  const { data: reorderPredictions, isLoading: loadingPredictions, error: predictionsError } = useReorderPredictions(); // Fetch reorder predictions
+  const autoReorderMutation = useAutoReorderProduct(); // Auto reorder mutation
 
-  const handleCreateOrder = (productId: number) => {
-    toast.info(`Creating order for product ${productId}...`);
-    // Implement logic to create a purchase order for the product
+  const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
+  const [productToOrder, setProductToOrder] = useState<{ id: number; name: string; quantity: number } | null>(null);
+
+
+  const handleCreateOrder = (productId: number, productName: string, quantity: number) => {
+    setProductToOrder({ id: productId, name: productName, quantity });
+    setIsPurchaseOrderDialogOpen(true);
   };
+
+  const handlePurchaseOrderSuccess = () => {
+    toast.success("Purchase order created successfully!");
+    setIsPurchaseOrderDialogOpen(false);
+    setProductToOrder(null);
+    refetch(); // Refetch low stock items
+  };
+
+  const handlePurchaseOrderCancel = () => {
+    setIsPurchaseOrderDialogOpen(false);
+    setProductToOrder(null);
+  };
+
+  const handleAutoReorder = async (productId: number) => {
+    try {
+      await autoReorderMutation.mutateAsync({ productId, data: {} }); // Assuming data can be empty or dynamically determined
+      toast.success(`Auto reorder triggered for product ${productId}!`);
+      refetch();
+    } catch (err: any) {
+      toast.error(`Failed to auto reorder: ${err.message || 'Unknown error'}`);
+    }
+  };
+
 
   const handleExport = (format: string) => {
     if (lowStockItems && lowStockItems.length > 0) {
@@ -92,6 +124,43 @@ export function LowStockTab() {
         </Card>
       </div>
 
+      {/* Reorder Predictions Card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" />
+            Reorder Predictions
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => toast.info("Refreshing predictions...")}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loadingPredictions ? (
+            <LoadingSkeleton variant="inline" />
+          ) : predictionsError ? (
+            <ErrorState message="Failed to load reorder predictions" onRetry={() => {}} />
+          ) : reorderPredictions && reorderPredictions.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {reorderPredictions.map((prediction: any) => (
+                <div key={prediction.product_id} className="border p-4 rounded-lg">
+                  <p className="font-medium">{prediction.product_name}</p>
+                  <p className="text-sm text-muted-foreground">SKU: {prediction.sku}</p>
+                  <p className="text-sm text-muted-foreground">Predicted Reorder Date: {prediction.predicted_reorder_date}</p>
+                  <p className="text-sm text-muted-foreground">Suggested Quantity: {prediction.suggested_quantity}</p>
+                  <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => handleCreateOrder(prediction.product_id, prediction.product_name, prediction.suggested_quantity)}>
+                    <ShoppingCart className="h-4 w-4 mr-2" /> Order Now
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No reorder predictions available.</p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Low Stock Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -152,10 +221,15 @@ export function LowStockTab() {
                       </TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={() => handleCreateOrder(item.id)}>
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                          Reorder
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="outline" size="sm" onClick={() => handleCreateOrder(item.id, item.name, item.reorder_level)}>
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Reorder
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleAutoReorder(item.id)}>
+                            <Zap className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -165,6 +239,25 @@ export function LowStockTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Purchase Order Dialog */}
+      <Dialog open={isPurchaseOrderDialogOpen} onOpenChange={setIsPurchaseOrderDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create Purchase Order</DialogTitle>
+            <DialogDescription>
+              Create a purchase order for {productToOrder?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {productToOrder && (
+            <PurchaseOrderForm
+              onSuccess={handlePurchaseOrderSuccess}
+              onCancel={handlePurchaseOrderCancel}
+              initialData={{ item: productToOrder.name, quantity: productToOrder.quantity }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

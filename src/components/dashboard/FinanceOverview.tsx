@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { Wallet, ArrowUpRight, ArrowDownRight, CreditCard, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,12 @@ const transactions = [
 ];
 
 export function FinanceOverview() {
+  const navigate = useNavigate(); // Initialize useNavigate
+
+  const handleViewReportsClick = () => {
+    navigate('/finance/reports');
+  };
+
   return (
     <div className="glass rounded-xl p-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
       <div className="flex items-center justify-between mb-6">
@@ -40,7 +47,7 @@ export function FinanceOverview() {
             <p className="text-sm text-muted-foreground">Revenue & Expenses</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="text-primary">
+        <Button variant="ghost" size="sm" className="text-primary" onClick={handleViewReportsClick}>
           View Reports
         </Button>
       </div>

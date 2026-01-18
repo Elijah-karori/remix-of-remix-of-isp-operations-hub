@@ -27,6 +27,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -38,55 +48,125 @@ import { Plus, Search, Bell, Package, Download, RefreshCw, Filter, Edit, Trash2,
 import { toast } from "sonner";
 import { exportToExcel } from "@/lib/export";
 
+// react-hook-form and zod imports
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+
+// Zod schema for product validation
+const productFormSchema = z.object({
+  name: z.string().min(1, { message: "Product name is required." }),
+  sku: z.string().min(1, { message: "SKU is required." }),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  unit_price: z.coerce.number().min(0, { message: "Unit price must be a non-negative number." }),
+  quantity_in_stock: z.coerce.number().int().min(0, { message: "Stock quantity must be a non-negative integer." }),
+  reorder_level: z.coerce.number().int().min(0, { message: "Reorder level must be a non-negative integer." }),
+  supplier_id: z.coerce.number().int().optional().refine(val => val === undefined || val > 0, {
+    message: "Supplier is required.", // Custom message for 0 or negative
+  }),
+  is_active: z.boolean().default(true),
+});
+
+type ProductFormValues = z.infer<typeof productFormSchema>;
+
+
 export function ProductsTab() {
   const { data: products, isLoading, error, refetch } = useProducts();
   const { data: suppliersData } = useSuppliers(true);
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
+  const deleteProductMutation = useDeleteProduct(); // Import useDeleteProduct
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
   const [isEditingProduct, setIsEditingProduct] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // State for delete dialog
+  const [productToDeleteId, setProductToDeleteId] = useState<number | null>(null); // State for product to delete
+  // const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null); // Replaced by react-hook-form
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [supplierFilter, setSupplierFilter] = useState("all");
 
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues: {
+      name: "",
+      sku: "",
+      description: "",
+      category: "",
+      unit_price: 0,
+      quantity_in_stock: 0,
+      reorder_level: 0,
+      supplier_id: undefined, // default to undefined
+      is_active: true,
+    },
+  });
+
+  useEffect(() => {
+    if (isAddProductDialogOpen && isEditingProduct && selectedProductId) {
+      const productToEdit = products?.find(p => p.id === selectedProductId);
+      if (productToEdit) {
+        form.reset({
+          name: productToEdit.name || "",
+          sku: productToEdit.sku || "",
+          description: productToEdit.description || "",
+          category: productToEdit.category || "",
+          unit_price: productToEdit.unit_price || 0,
+          quantity_in_stock: productToEdit.quantity_in_stock || 0,
+          reorder_level: productToEdit.reorder_level || 0,
+          supplier_id: productToEdit.supplier_id || undefined,
+          is_active: productToEdit.is_active ?? true,
+        });
+      }
+    } else if (!isAddProductDialogOpen) {
+      form.reset(); // Reset form fields to default when dialog closes
+      setSelectedProductId(null); // Clear selected product ID
+    }
+  }, [isAddProductDialogOpen, isEditingProduct, selectedProductId, products, form]);
+
+
   const handleOpenAddProductDialog = () => {
     setIsEditingProduct(false);
-    setCurrentProduct({});
+    setSelectedProductId(null);
+    form.reset(); // Reset form fields to default
     setIsAddProductDialogOpen(true);
   };
 
   const handleEditProduct = (product: Product) => {
     setIsEditingProduct(true);
-    setCurrentProduct(product);
+    setSelectedProductId(product.id);
     setIsAddProductDialogOpen(true);
   };
 
-  const handleSaveProduct = async () => {
-    if (!currentProduct?.name || !currentProduct?.sku || !currentProduct?.unit_price || !currentProduct?.quantity_in_stock || !currentProduct?.reorder_level) {
-      toast.error("Please fill all required fields.");
-      return;
-    }
-
+  const onSubmit = async (values: ProductFormValues) => {
     try {
-      if (isEditingProduct && currentProduct?.id) {
-        await updateProductMutation.mutateAsync({ id: currentProduct.id, data: currentProduct });
+      if (isEditingProduct && selectedProductId) {
+        await updateProductMutation.mutateAsync({ id: selectedProductId, data: {
+            name: values.name,
+            sku: values.sku,
+            description: values.description,
+            category: values.category,
+            price: values.unit_price, // map back to 'price' for API
+            quantity_on_hand: values.quantity_in_stock, // map back to 'quantity_on_hand' for API
+            reorder_level: values.reorder_level,
+            supplier_id: values.supplier_id,
+            is_active: values.is_active,
+        } as Partial<ProductCreate> }); // Cast to partial as not all fields might be updated
         toast.success("Product updated successfully!");
       } else {
-        // Create ProductCreate payload
         const createPayload: ProductCreate = {
-          name: currentProduct.name,
-          sku: currentProduct.sku,
-          description: currentProduct.description,
-          category: currentProduct.category,
-          price: currentProduct.unit_price || 0,
-          cost_price: currentProduct.cost_price,
-          quantity_on_hand: currentProduct.quantity_in_stock || 0,
-          reorder_level: currentProduct.reorder_level,
-          supplier_id: currentProduct.supplier_id,
-          specifications: currentProduct.specifications,
+          name: values.name,
+          sku: values.sku,
+          description: values.description,
+          category: values.category,
+          price: values.unit_price,
+          quantity_on_hand: values.quantity_in_stock,
+          reorder_level: values.reorder_level,
+          supplier_id: values.supplier_id,
+          is_active: values.is_active,
         };
         await createProductMutation.mutateAsync(createPayload);
         toast.success("Product added successfully!");
@@ -253,7 +333,7 @@ export function ProductsTab() {
                             <Button variant="ghost" size="icon" onClick={() => toast.info(`Viewing product ${product.id}`)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => toast.info(`Deleting product ${product.id}`)}>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(product.id)}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
@@ -273,6 +353,25 @@ export function ProductsTab() {
         onClose={() => setSelectedProductId(null)}
       />
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product
+              and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} disabled={deleteProductMutation.isPending}>
+              {deleteProductMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={isAddProductDialogOpen} onOpenChange={setIsAddProductDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -281,125 +380,181 @@ export function ProductsTab() {
               {isEditingProduct ? "Make changes to the product details." : "Fill in the details for the new product."}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={currentProduct?.name || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })}
-                className="col-span-3"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="name" className="text-right">Name</FormLabel>
+                    <FormControl>
+                      <Input id="name" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="sku" className="text-right">
-                SKU
-              </Label>
-              <Input
-                id="sku"
-                value={currentProduct?.sku || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, sku: e.target.value })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="sku"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="sku" className="text-right">SKU</FormLabel>
+                    <FormControl>
+                      <Input id="sku" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                value={currentProduct?.description || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="description" className="text-right">Description</FormLabel>
+                    <FormControl>
+                      <Textarea id="description" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="category" className="text-right">
-                Category
-              </Label>
-              <Input
-                id="category"
-                value={currentProduct?.category || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="category" className="text-right">Category</FormLabel>
+                    <FormControl>
+                      <Input id="category" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="unit_price" className="text-right">
-                Unit Price
-              </Label>
-              <Input
-                id="unit_price"
-                type="number"
-                value={currentProduct?.unit_price || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, unit_price: parseFloat(e.target.value) })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="unit_price"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="unit_price" className="text-right">Unit Price</FormLabel>
+                    <FormControl>
+                      <Input id="unit_price" type="number" {...field} className="col-span-3" onChange={e => field.onChange(parseFloat(e.target.value))} />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantity_in_stock" className="text-right">
-                Stock Quantity
-              </Label>
-              <Input
-                id="quantity_in_stock"
-                type="number"
-                value={currentProduct?.quantity_in_stock || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, quantity_in_stock: parseInt(e.target.value) })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="quantity_in_stock"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="quantity_in_stock" className="text-right">Stock Quantity</FormLabel>
+                    <FormControl>
+                      <Input id="quantity_in_stock" type="number" {...field} className="col-span-3" onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="reorder_level" className="text-right">
-                Reorder Level
-              </Label>
-              <Input
-                id="reorder_level"
-                type="number"
-                value={currentProduct?.reorder_level || ""}
-                onChange={(e) => setCurrentProduct({ ...currentProduct, reorder_level: parseInt(e.target.value) })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="reorder_level"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="reorder_level" className="text-right">Reorder Level</FormLabel>
+                    <FormControl>
+                      <Input id="reorder_level" type="number" {...field} className="col-span-3" onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="supplier" className="text-right">
-                Supplier
-              </Label>
-              <Select
-                value={String(currentProduct?.supplier_id || "")}
-                onValueChange={(value) => setCurrentProduct({ ...currentProduct, supplier_id: parseInt(value) })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a supplier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliersData?.map((supplier) => (
-                    <SelectItem key={supplier.id} value={String(supplier.id)}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="is_active" className="text-right">
-                Active
-              </Label>
-              <Checkbox
-                id="is_active"
-                checked={currentProduct?.is_active || false}
-                onCheckedChange={(checked) => setCurrentProduct({ ...currentProduct, is_active: checked as boolean })}
-                className="col-span-3 justify-self-start"
+              <FormField
+                control={form.control}
+                name="supplier_id"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="supplier_id" className="text-right">Supplier</FormLabel>
+                    <Select onValueChange={value => field.onChange(parseInt(value))} value={field.value ? String(field.value) : ""}>
+                      <FormControl>
+                        <SelectTrigger id="supplier_id" className="col-span-3">
+                          <SelectValue placeholder="Select a supplier" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {suppliersData?.map((supplier) => (
+                          <SelectItem key={supplier.id} value={String(supplier.id)}>
+                            {supplier.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddProductDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveProduct} disabled={createProductMutation.isPending || updateProductMutation.isPending}>
-              {createProductMutation.isPending || updateProductMutation.isPending ? "Saving..." : "Save Product"}
-            </Button>
-          </DialogFooter>
+              <FormField
+                control={form.control}
+                name="image_url" // Hidden field for current image URL
+                render={({ field }) => (
+                  <>
+                    {field.value && (
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <FormLabel className="text-right">Current Image</FormLabel>
+                        <div className="col-span-3">
+                          <img src={field.value} alt="Product" className="w-24 h-24 object-cover rounded-md" />
+                        </div>
+                      </div>
+                    )}
+                    <FormItem className="grid grid-cols-4 items-center gap-4">
+                      <FormLabel htmlFor="image_file" className="text-right">Upload Image</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="image_file"
+                          type="file"
+                          className="col-span-3"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              setImageFile(e.target.files[0]);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage className="col-span-4 col-start-2" />
+                    </FormItem>
+                  </>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="is_active" className="text-right">Active</FormLabel>
+                    <FormControl>
+                      <Checkbox
+                        id="is_active"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="col-span-3 justify-self-start"
+                      />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={() => setIsAddProductDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting || createProductMutation.isPending || updateProductMutation.isPending || isImageUploading}>
+                  {form.formState.isSubmitting || createProductMutation.isPending || updateProductMutation.isPending || isImageUploading ? "Saving..." : "Save Product"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </>

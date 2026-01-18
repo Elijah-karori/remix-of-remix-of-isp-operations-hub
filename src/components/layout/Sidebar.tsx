@@ -26,6 +26,8 @@ import {
   Banknote,   // New import
   Wifi,
   Menu,
+  FileCheck, // New import for Tester Coverage
+  Eye,       // New import for Auditor Heatmap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -60,7 +62,17 @@ const mainNavItems: NavItem[] = [
     ]
   },
   { label: "Inventory", icon: Package, href: "/inventory", permission: "inventory:read" },
-  { label: "HR", icon: Users, href: "/hr", permission: "hr:read" },
+  {
+    label: "HR",
+    icon: Users,
+    href: "/hr",
+    permission: "hr:read",
+    children: [
+      { label: "Employees", icon: Users, href: "/hr/employees", permission: "hr:employees:read" },
+      { label: "Payroll", icon: DollarSign, href: "/hr/payroll", permission: "hr:payroll:read" },
+      { label: "Complaints", icon: FileText, href: "/hr/complaints", permission: "hr:complaints:read" },
+    ]
+  },
   { label: "Technicians", icon: Wrench, href: "/technicians", permission: "technicians:read" },
   {
     label: "CRM",
@@ -76,12 +88,9 @@ const mainNavItems: NavItem[] = [
   {
     label: "Marketing",
     icon: BarChart3,
-    href: "/marketing",
+    href: "/marketing", // Main marketing page for campaigns list
     permission: "marketing:read",
-    children: [
-      { label: "Campaigns", icon: BarChart3, href: "/marketing/campaigns", permission: "marketing:campaigns:read" },
-      { label: "Leads", icon: Users, href: "/marketing/leads", permission: "marketing:leads:read" },
-    ]
+    // Campaigns child is removed as the main /marketing page now lists campaigns
   }
 ];
 
@@ -91,6 +100,8 @@ const systemNavItems: NavItem[] = [
   { label: "Analytics", icon: BarChart3, href: "/system/analytics", permission: "analytics:read" },
   { label: "Audit Logs", icon: FileText, href: "/system/audit", permission: "audit:read" },
   { label: "Settings", icon: Settings, href: "/system/settings", permission: "settings:manage" },
+  { label: "Tester Coverage", icon: FileCheck, href: "/system/tester-coverage", permission: "dashboard:tester:coverage:read" },
+  { label: "Auditor Heatmap", icon: Eye, href: "/system/auditor-heatmap", permission: "dashboard:auditor:heatmap:read" },
 ];
 
 export function Sidebar() {

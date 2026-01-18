@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { useSuppliers, useCreateSupplier, useUpdateSupplier, Supplier } from "@/hooks/use-inventory";
+import { useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, Supplier } from "@/hooks/use-inventory"; // Import useDeleteSupplier
 import { exportToExcel } from "@/lib/export";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
+// import { Label } from "@/components/ui/label"; // Label is part of FormField now
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -26,70 +26,137 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Plus,
-  Search,
-  Truck,
-  Phone,
-  Mail,
-  RefreshCw,
-  Download,
-  Edit,
-  Trash2,
-  Eye,
-} from "lucide-react";
-import { useState } from "react";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, Truck, Phone, Mail, RefreshCw, Download, Edit, Trash2, Eye } from "lucide-react";
+import { useState, useEffect } from "react"; // Added useEffect
+
+// react-hook-form and zod imports
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+
+// Zod schema for supplier validation
+const supplierFormSchema = z.object({
+  name: z.string().min(1, { message: "Supplier name is required." }),
+  contact_person: z.string().optional(),
+  email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
+  phone: z.string().min(1, { message: "Phone number is required." }),
+  address: z.string().optional(),
+  is_active: z.boolean().default(true),
+});
+
+type SupplierFormValues = z.infer<typeof supplierFormSchema>;
+
 
 export function SuppliersTab() {
   const { data: suppliers, isLoading, error, refetch } = useSuppliers();
   const createSupplierMutation = useCreateSupplier();
   const updateSupplierMutation = useUpdateSupplier();
+  const deleteSupplierMutation = useDeleteSupplier(); // Import useDeleteSupplier hook
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddSupplierDialogOpen, setIsAddSupplierDialogOpen] = useState(false);
   const [isEditingSupplier, setIsEditingSupplier] = useState(false);
-  const [currentSupplier, setCurrentSupplier] = useState<Partial<Supplier> | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // State for delete dialog
+  const [supplierToDeleteId, setSupplierToDeleteId] = useState<number | null>(null); // State for supplier to delete
+  const [isViewSupplierDialogOpen, setIsViewSupplierDialogOpen] = useState(false); // State for view dialog
+  const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null); // State for supplier to view
+
+
+  const form = useForm<SupplierFormValues>({
+    resolver: zodResolver(supplierFormSchema),
+    defaultValues: {
+      name: "",
+      contact_person: "",
+      email: "",
+      phone: "",
+      address: "",
+      is_active: true,
+    },
+  });
+
+  useEffect(() => {
+    if (isAddSupplierDialogOpen && isEditingSupplier && supplierToDeleteId) { // Using supplierToDeleteId as a proxy for selected supplier ID
+      const supplierToEdit = suppliers?.find(s => s.id === supplierToDeleteId); // Find by ID
+      if (supplierToEdit) {
+        form.reset({
+          name: supplierToEdit.name || "",
+          contact_person: supplierToEdit.contact_person || "",
+          email: supplierToEdit.email || "",
+          phone: supplierToEdit.phone || "",
+          address: supplierToEdit.address || "",
+          is_active: supplierToEdit.is_active ?? true,
+        });
+      }
+    } else if (!isAddSupplierDialogOpen) {
+      form.reset(); // Reset form fields to default when dialog closes
+      setSupplierToDeleteId(null); // Clear selected supplier ID
+    }
+  }, [isAddSupplierDialogOpen, isEditingSupplier, supplierToDeleteId, suppliers, form]);
+
 
   const handleOpenAddSupplierDialog = () => {
     setIsEditingSupplier(false);
-    setCurrentSupplier({});
+    setSupplierToDeleteId(null); // Clear selected supplier ID
+    form.reset(); // Reset form fields to default
     setIsAddSupplierDialogOpen(true);
   };
 
   const handleEditSupplier = (supplier: Supplier) => {
     setIsEditingSupplier(true);
-    setCurrentSupplier(supplier);
+    setSupplierToDeleteId(supplier.id); // Set the ID for editing
     setIsAddSupplierDialogOpen(true);
   };
 
-  const handleSaveSupplier = async () => {
-    if (!currentSupplier?.name || !currentSupplier?.email || !currentSupplier?.phone) {
-      toast.error("Please fill all required fields.");
-      return;
-    }
+  const handleDeleteClick = (supplierId: number) => {
+    setSupplierToDeleteId(supplierId);
+    setIsDeleteDialogOpen(true);
+  };
 
+  const handleViewSupplier = (supplier: Supplier) => {
+    setViewingSupplier(supplier);
+    setIsViewSupplierDialogOpen(true);
+  };
+
+
+  const handleConfirmDelete = async () => {
+    if (supplierToDeleteId) {
+      try {
+        await deleteSupplierMutation.mutateAsync(supplierToDeleteId);
+        toast.success("Supplier deleted successfully!");
+        refetch();
+      } catch (err: any) {
+        toast.error(`Failed to delete supplier: ${err.message || 'Unknown error'}`);
+      } finally {
+        setIsDeleteDialogOpen(false);
+        setSupplierToDeleteId(null);
+      }
+    }
+  };
+
+  const onSubmit = async (values: SupplierFormValues) => {
     try {
-      if (isEditingSupplier && currentSupplier?.id) {
-        await updateSupplierMutation.mutateAsync({ id: currentSupplier.id, data: currentSupplier });
+      if (isEditingSupplier && supplierToDeleteId) {
+        await updateSupplierMutation.mutateAsync({ id: supplierToDeleteId, data: values });
         toast.success("Supplier updated successfully!");
       } else {
-        await createSupplierMutation.mutateAsync(currentSupplier);
+        await createSupplierMutation.mutateAsync(values);
         toast.success("Supplier added successfully!");
       }
       setIsAddSupplierDialogOpen(false);
       refetch();
-    } catch (err) {
+    } catch (err: any) {
       toast.error(`Failed to save supplier: ${err.message || 'Unknown error'}`);
-    }
-  };
-
-  const handleDeleteSupplier = (id: number) => {
-    if (confirm("Are you sure you want to delete this supplier?")) {
-      toast.info(`Deleting supplier ${id}...`);
-      // Implement delete API call here
-      setTimeout(() => {
-        toast.success("Supplier deleted successfully!");
-        refetch();
-      }, 1000);
     }
   };
 
@@ -213,10 +280,10 @@ export function SuppliersTab() {
                           <Button variant="ghost" size="icon" onClick={() => handleEditSupplier(supplier)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => toast.info(`Viewing supplier ${supplier.id}`)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleViewSupplier(supplier)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSupplier(supplier.id)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(supplier.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
@@ -230,6 +297,26 @@ export function SuppliersTab() {
         </CardContent>
       </Card>
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the supplier
+              and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} disabled={deleteSupplierMutation.isPending}>
+              {deleteSupplierMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </DialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Supplier Add/Edit Dialog */}
       <Dialog open={isAddSupplierDialogOpen} onOpenChange={setIsAddSupplierDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -238,83 +325,98 @@ export function SuppliersTab() {
               {isEditingSupplier ? "Make changes to the supplier details." : "Fill in the details for the new supplier."}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={currentSupplier?.name || ""}
-                onChange={(e) => setCurrentSupplier({ ...currentSupplier, name: e.target.value })}
-                className="col-span-3"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="name" className="text-right">Name</FormLabel>
+                    <FormControl>
+                      <Input id="name" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="contact_person" className="text-right">
-                Contact Person
-              </Label>
-              <Input
-                id="contact_person"
-                value={currentSupplier?.contact_person || ""}
-                onChange={(e) => setCurrentSupplier({ ...currentSupplier, contact_person: e.target.value })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="contact_person"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="contact_person" className="text-right">Contact Person</FormLabel>
+                    <FormControl>
+                      <Input id="contact_person" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={currentSupplier?.email || ""}
-                onChange={(e) => setCurrentSupplier({ ...currentSupplier, email: e.target.value })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="email" className="text-right">Email</FormLabel>
+                    <FormControl>
+                      <Input id="email" type="email" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                value={currentSupplier?.phone || ""}
-                onChange={(e) => setCurrentSupplier({ ...currentSupplier, phone: e.target.value })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="phone" className="text-right">Phone</FormLabel>
+                    <FormControl>
+                      <Input id="phone" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="address" className="text-right">
-                Address
-              </Label>
-              <Input
-                id="address"
-                value={currentSupplier?.address || ""}
-                onChange={(e) => setCurrentSupplier({ ...currentSupplier, address: e.target.value })}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="address" className="text-right">Address</FormLabel>
+                    <FormControl>
+                      <Input id="address" {...field} className="col-span-3" />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="is_active" className="text-right">
-                Active
-              </Label>
-              <Checkbox
-                id="is_active"
-                checked={currentSupplier?.is_active || false}
-                onCheckedChange={(checked) => setCurrentSupplier({ ...currentSupplier, is_active: checked as boolean })}
-                className="col-span-3 justify-self-start"
+              <FormField
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel htmlFor="is_active" className="text-right">Active</FormLabel>
+                    <FormControl>
+                      <Checkbox
+                        id="is_active"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="col-span-3 justify-self-start"
+                      />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-2" />
+                  </FormItem>
+                )}
               />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddSupplierDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveSupplier} disabled={createSupplierMutation.isPending || updateSupplierMutation.isPending}>
-              {createSupplierMutation.isPending || updateSupplierMutation.isPending ? "Saving..." : "Save Supplier"}
-            </Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={() => setIsAddSupplierDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting || createSupplierMutation.isPending || updateSupplierMutation.isPending}>
+                  {form.formState.isSubmitting || createSupplierMutation.isPending || updateSupplierMutation.isPending ? "Saving..." : "Save Supplier"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
-    </>
-  );
-}

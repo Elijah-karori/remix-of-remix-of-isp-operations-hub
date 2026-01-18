@@ -214,6 +214,26 @@ export function useInventoryDeadStock(daysThreshold = 90) {
   });
 }
 
+export function useReorderPredictions() {
+  return useQuery({
+    queryKey: ["inventory", "reorderPredictions"],
+    queryFn: () => inventoryApi.reorderPredictions(),
+    staleTime: 3600000, // 1 hour
+  });
+}
+
+export function useAutoReorderProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ productId, data }: { productId: number; data: any }) =>
+      inventoryApi.autoReorder(productId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    },
+  });
+}
+
 export function useCreateSupplier() {
   const queryClient = useQueryClient();
 
@@ -238,6 +258,17 @@ export function useUpdateSupplier() {
   });
 }
 
+export function useDeleteSupplier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => inventoryApi.deleteSupplier(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", "suppliers"] });
+    },
+  });
+}
+
 export function useApproveOrder() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -245,6 +276,26 @@ export function useApproveOrder() {
       procurementApi.approveOrder(purchaseId, approved, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["procurement", "orders"] });
+    },
+  });
+}
+
+export function useSpendingTrends(days = 90, groupBy = "supplier") {
+  return useQuery({
+    queryKey: ["procurement", "spendingTrends", days, groupBy],
+    queryFn: () => procurementApi.spendingTrends(days, groupBy),
+    staleTime: 3600000, // 1 hour
+  });
+}
+
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => inventoryApi.deleteProduct(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
     },
   });
 }

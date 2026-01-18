@@ -483,6 +483,9 @@ export const inventoryApi = {
       body: JSON.stringify(data)
     }),
 
+  deleteProduct: (id: number) =>
+    apiFetch(`/api/v1/inventory/products/${id}`, { method: "DELETE" }),
+
   uploadProductImage: async (productId: number, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -518,6 +521,9 @@ export const inventoryApi = {
       method: "PATCH",
       body: JSON.stringify(data)
     }),
+
+  deleteSupplier: (id: number) =>
+    apiFetch(`/api/v1/inventory/suppliers/${id}`, { method: "DELETE" }),
 
   // Stock Management
   lowStock: async (thresholdMultiplier = 1.0) => {
