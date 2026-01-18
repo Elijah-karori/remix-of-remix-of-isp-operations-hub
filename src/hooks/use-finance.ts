@@ -739,3 +739,77 @@ export const useProcessTaskCompletionFinancial = () => {
     },
   });
 };
+
+export const useDetectTaskVariances = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: number) => financeApi.detectTaskVariances(taskId),
+    onSuccess: (data) => {
+      // Assuming data from detectTaskVariances contains some info, e.g., task_id or detected_variances
+      queryClient.invalidateQueries({ queryKey: ['finance', 'bom-variances', 'pending'] });
+      // You might want to display a more specific success message based on the API response
+      toast.success(`Task variances for Task ID ${data?.task_id || 'unknown'} detected successfully!`);
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to detect task variances: ${error.message || 'Unknown error'}`);
+    },
+  });
+};
+
+// Budget Template Hooks
+export const useDownloadBudgetTemplate = () => {
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState<any>(null);
+
+  const downloadTemplate = async (projectName = "New Project") => {
+    setDownloading(true);
+    setError(null);
+    try {
+      const response = await financeApi.downloadBudgetTemplate(projectName);
+      // Assuming response is a blob or has a download_url
+      if (response.download_url) {
+        window.open(response.download_url, '_blank');
+        toast.success("Budget template download started.");
+      } else {
+        // Handle direct file download if API returns a blob directly
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectName || 'budget_template'}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        toast.success("Budget template downloaded successfully.");
+      }
+    } catch (err: any) {
+      setError(err);
+      toast.error(`Failed to download budget template: ${err.message || 'Unknown error'}`);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return { downloadTemplate, downloading, error };
+};
+
+export const useUploadBudget = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => financeApi.uploadBudget(file),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['finance', 'master-budgets'] }); // Invalidate budgets after upload
+      toast.success('Budget uploaded successfully!');
+      if (data.message) {
+        toast.info(data.message);
+      }
+      if (data.errors && data.errors.length > 0) {
+        data.errors.forEach((err: string) => toast.error(err));
+      }
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to upload budget: ${error.message || 'Unknown error'}`);
+    },
+  });
+};

@@ -96,6 +96,10 @@ import {
   useMonthlyProfit,
   useReconcileAccounts,
   useProcessTaskCompletionFinancial,
+  // New hooks for budget management
+  useDownloadBudgetTemplate,
+  useUploadBudget,
+  useDetectTaskVariances,
 } from "@/hooks/use-finance";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -744,6 +748,53 @@ export default function Finance() {
       toast.success(`Financial completion processed for Task ID: ${taskId}`);
     } catch (err: any) {
       toast.error(`Failed to process financial completion for task: ${err.message || 'Unknown error'}`);
+    }
+  };
+
+  // New: Budget Template & Upload states
+  const { downloadTemplate, downloading: downloadingTemplate } = useDownloadBudgetTemplate();
+  const uploadBudgetMutation = useUploadBudget();
+  const [budgetUploadFile, setBudgetUploadFile] = useState<File | null>(null);
+  const [projectNameForTemplate, setProjectNameForTemplate] = useState<string>('');
+
+
+  const handleBudgetFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setBudgetUploadFile(event.target.files[0]);
+    }
+  };
+
+  const handleUploadBudget = async () => {
+    if (!budgetUploadFile) {
+      toast.error("Please select a file to upload.");
+      return;
+    }
+    try {
+      await uploadBudgetMutation.mutateAsync(budgetUploadFile);
+      setBudgetUploadFile(null); // Clear file input
+      // Optionally reset file input value for UI
+      const fileInput = document.getElementById('budgetUploadInput') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+    } catch (err: any) {
+      // Error handled by mutation's onError
+    }
+  };
+
+  // New: Detect Task Variances state
+  const detectTaskVariancesMutation = useDetectTaskVariances();
+  const [detectTaskVarianceTaskId, setDetectTaskVarianceTaskId] = useState<number | null>(null);
+
+  const handleDetectTaskVariances = async () => {
+    if (!detectTaskVarianceTaskId) {
+      toast.error("Please enter a Task ID to detect variances.");
+      return;
+    }
+    try {
+      // Assuming detectTaskVariancesMutation returns data that can be used in toast
+      const result = await detectTaskVariancesMutation.mutateAsync(detectTaskVarianceTaskId);
+      toast.success(`Task variances for Task ID ${detectTaskVarianceTaskId} detected successfully!`);
+    } catch (err: any) {
+      // Error handled by mutation's onError
     }
   };
 
@@ -1617,6 +1668,40 @@ export default function Finance() {
               )}
             </CardContent>
           </Card>
+
+          <Card className="glass">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Budget Tools</CardTitle>
+              <Zap className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="templateProjectName">Project Name for Template</Label>
+                <Input
+                  id="templateProjectName"
+                  value={projectNameForTemplate}
+                  onChange={(e) => setProjectNameForTemplate(e.target.value)}
+                  placeholder="e.g., New Fiber Rollout"
+                />
+                <Button onClick={() => downloadTemplate(projectNameForTemplate || undefined)} disabled={downloadingTemplate} className="w-full">
+                  {downloadingTemplate ? "Downloading..." : "Download Budget Template"}
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="budgetUploadInput">Upload Budget File (.xlsx)</Label>
+                <Input
+                  id="budgetUploadInput"
+                  type="file"
+                  accept=".xlsx"
+                  onChange={handleBudgetFileUpload}
+                />
+                <Button onClick={handleUploadBudget} disabled={uploadBudgetMutation.isPending || !budgetUploadFile} className="w-full">
+                  {uploadBudgetMutation.isPending ? "Uploading..." : "Upload Budget"}
+                </Button>
+              </CardContent>
+          </Card>
+
         </TabsContent>
 
         {/* Analytics & Reports Tab Content */}
@@ -1924,6 +2009,28 @@ export default function Finance() {
                   </div>
                   <Button onClick={() => handleProcessTaskFinancialCompletion(1)} className="w-full" disabled={processTaskCompletionFinancialMutation.isPending}>
                     {processTaskCompletionFinancialMutation.isPending ? "Processing..." : "Process Financial Completion (Example Task 1)"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="glass">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-lg font-semibold">Detect Task Variances</CardTitle>
+                  <Calculator className="h-5 w-5 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="taskIdForVarianceDetection">Task ID</Label>
+                    <Input
+                      id="taskIdForVarianceDetection"
+                      type="number"
+                      placeholder="e.g., 42"
+                      value={detectTaskVarianceTaskId?.toString() || ''}
+                      onChange={(e) => setDetectTaskVarianceTaskId(parseInt(e.target.value) || null)}
+                    />
+                  </div>
+                  <Button onClick={handleDetectTaskVariances} className="w-full" disabled={detectTaskVariancesMutation.isPending || !detectTaskVarianceTaskId}>
+                    {detectTaskVariancesMutation.isPending ? "Detecting..." : "Detect Variances"}
                   </Button>
                 </CardContent>
               </Card>

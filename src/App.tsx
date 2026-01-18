@@ -9,7 +9,7 @@ import Index from "./pages/Index";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Tasks from "./pages/Tasks";
-import Finance from "./pages/Finance";
+import Finance from "./pages/Finance"; // This is the consolidated Finance page
 import Inventory from "./pages/Inventory";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -32,13 +32,6 @@ import Leads from "./pages/CRM/Leads";
 import Deals from "./pages/CRM/Deals"; // New import for Deals page
 import Activities from "./pages/CRM/Activities";
 import CRMIndex from "./pages/CRM/Index";
-import FinanceIndex from "./pages/Finance/Index"; // New import
-import Budgets from "./pages/Finance/Budgets";     // New import
-import Invoices from "./pages/Finance/Invoices";   // New import
-import Accounts from "./pages/Finance/Accounts";   // New import
-import Reports from "./pages/Finance/Reports";
-import Mpesa from "./pages/Finance/Mpesa";     // New import
-import Ncba from "./pages/Finance/Ncba";       // New import
 import HRIndex from "./pages/HR/Index";
 import Employees from "./pages/HR/Employees";
 import Payroll from "./pages/HR/Payroll";
@@ -129,59 +122,11 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route // New route for Finance Index
+            <Route // Consolidated Finance page with tabs
               path="/finance"
               element={
                 <ProtectedRoute>
-                  <FinanceIndex />
-                </ProtectedRoute>
-              }
-            />
-            <Route // New route for Finance Budgets
-              path="/finance/budgets"
-              element={
-                <ProtectedRoute>
-                  <Budgets />
-                </ProtectedRoute>
-              }
-            />
-            <Route // New route for Finance Invoices
-              path="/finance/invoices"
-              element={
-                <ProtectedRoute>
-                  <Invoices />
-                </ProtectedRoute>
-              }
-            />
-            <Route // New route for Finance Accounts
-              path="/finance/accounts"
-              element={
-                <ProtectedRoute>
-                  <Accounts />
-                </ProtectedRoute>
-              }
-            />
-            <Route // New route for Finance Reports
-              path="/finance/reports"
-              element={
-                <ProtectedRoute>
-                  <Reports />
-                </ProtectedRoute>
-              }
-            />
-            <Route // New route for Mpesa
-              path="/finance/mpesa"
-              element={
-                <ProtectedRoute>
-                  <Mpesa />
-                </ProtectedRoute>
-              }
-            />
-            <Route // New route for NCBA Bank
-              path="/finance/ncba"
-              element={
-                <ProtectedRoute>
-                  <Ncba />
+                  <Finance />
                 </ProtectedRoute>
               }
             />

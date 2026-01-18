@@ -1,895 +1,831 @@
-export interface Token {
-    access_token: string;
-    token_type: string;
-}
-
-export interface HTTPValidationError {
-    detail: ValidationError[];
-}
-
-export interface ValidationError {
-    loc: string[];
-    msg: string;
-    type: string;
-}
+// Common Types
+export type ID = number;
+export type DateString = string; // ISO 8601 format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss)
 
 // --- Auth & Users ---
+export interface Token {
+  access_token: string;
+  token_type: string;
+}
 
-export interface UserOut {
-    id: number;
-    email: string;
-    full_name: string;
-    is_active: boolean;
-    is_superuser: boolean;
-    role_id?: number;
-    department_id?: number;
-    phone_number?: string;
-    avatar_url?: string;
-    role?: RoleV2Out;
-    department?: DepartmentOut;
+export interface User {
+  id: ID;
+  email: string;
+  full_name: string;
+  phone?: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  roles: Role[]; // Old RBAC structure
+  roles_v2?: RoleV2Out[]; // New RBAC structure
+  menus?: MenuItem[]; // Dynamic frontend navigation
+  created_at: DateString;
 }
 
 export interface UserCreate {
-    email: string;
-    password?: string;
-    full_name?: string;
-    is_active?: boolean;
-    is_superuser?: boolean;
-    role_id?: number;
-    department_id?: number;
-    phone_number?: string;
+  email: string;
+  password?: string;
+  full_name?: string;
+  is_active?: boolean;
+  is_superuser?: boolean;
+  role_id?: number;
+  department_id?: number;
+  phone_number?: string;
 }
 
 export interface UserUpdate {
-    email?: string;
-    password?: string;
-    full_name?: string;
-    is_active?: boolean;
-    is_superuser?: boolean;
-    role_id?: number;
-    department_id?: number;
-    phone_number?: string;
-    avatar_url?: string;
+  email?: string;
+  password?: string;
+  full_name?: string;
+  is_active?: boolean;
+  is_superuser?: boolean;
+  role_id?: number;
+  department_id?: number;
+  phone_number?: string;
+  avatar_url?: string;
 }
 
-export interface RoleV2Out {
-    id: number;
-    name: string;
-    description?: string;
-    parent_id?: number;
-    scopes: string[];
+export interface MenuItem {
+  key: string;
+  label: string;
+  path: string;
+  icon?: string;
+  children?: MenuItem[];
 }
 
-export interface DepartmentOut {
-    id: number;
-    name: string;
-    description?: string;
-    division_id?: number;
+// --- RBAC (Role-Based Access Control) ---
+export interface Role { // Old RBAC Role structure
+  id: ID;
+  name: string;
+  description?: string;
+  permissions: string[];
+  created_at: DateString;
 }
 
-// --- Projects ---
-
-export interface ProjectOut {
-    id: number;
-    name: string;
-    description?: string;
-    status: string; // ProjectStatus enum ideally
-    department_id?: number;
-    division_id?: number;
-    manager_id?: number;
-    start_date?: string;
-    end_date?: string;
-    budget?: number;
-    infrastructure_type?: string;
-    location_lat?: number;
-    location_lng?: number;
-    coverage_radius?: number;
-    completion_percentage?: number;
-    health_score?: number;
+export interface RoleV2Out { // New RBAC Role structure
+  id: number;
+  name: string;
+  description?: string;
+  parent_id?: number;
+  scopes: string[];
 }
 
-export interface ProjectCreate {
-    name: string;
-    description?: string;
-    department_id?: number;
-    division_id?: number;
-    manager_id?: number;
-    start_date?: string;
-    end_date?: string;
-    budget?: number;
-    infrastructure_type?: string;
-    location_lat?: number;
-    location_lng?: number;
-    coverage_radius?: number;
+export interface RoleHierarchy {
+  role: Role;
+  children: RoleHierarchy[];
+  parent_role_id?: ID;
+  depth: number;
 }
 
-export interface ProjectUpdate {
-    name?: string;
-    description?: string;
-    status?: string;
-    department_id?: number;
-    division_id?: number;
-    manager_id?: number;
-    start_date?: string;
-    end_date?: string;
-    budget?: number;
-    infrastructure_type?: string;
-    location_lat?: number;
-    location_lng?: number;
-    coverage_radius?: number;
-}
-
-export interface MilestoneOut {
-    id: number;
-    project_id: number;
-    name: string;
-    description?: string;
-    due_date?: string;
-    status: string;
-    progress: number;
-}
-
-// --- Tasks ---
-
-export interface TaskOut {
-    id: number;
-    title: string;
-    description?: string;
-    status: string;
-    priority: string;
-    project_id: number;
-    assigned_to_id?: number;
-    assigned_role_id?: number;
-    department_id?: number;
-    due_date?: string;
-    estimated_hours?: number;
-    actual_hours?: number;
-    completion_percentage: number;
-    parent_task_id?: number;
-    created_at: string;
-    updated_at: string;
-    assignee?: UserOut;
-    project?: ProjectOut;
-}
-
-export interface TaskCreate {
-    title: string;
-    description?: string;
-    project_id: number;
-    assigned_to_id?: number;
-    assigned_role_id?: number;
-    department_id?: number;
-    status?: string;
-    priority?: string;
-    due_date?: string;
-    estimated_hours?: number;
-    parent_task_id?: number;
-}
-
-export interface TaskUpdate {
-    title?: string;
-    description?: string;
-    assigned_to_id?: number;
-    assigned_role_id?: number;
-    status?: string;
-    priority?: string;
-    due_date?: string;
-    estimated_hours?: number;
-    actual_hours?: number;
-    completion_percentage?: number;
-}
-
-// --- Inventory ---
-
-export interface Product {
-    id: number;
-    name: string;
-    sku: string;
-    description?: string;
-    category?: string;
-    price: number;
-    cost_price?: number;
-    quantity_on_hand: number;
-    reorder_level?: number;
-    supplier_id?: number;
-    image_url?: string;
-    specifications?: Record<string, any>;
-    is_active: boolean;
-    supplier?: Supplier;
-}
-
-export interface ProductCreate {
-    name: string;
-    sku?: string;
-    description?: string;
-    category?: string;
-    price: number;
-    cost_price?: number;
-    quantity_on_hand?: number;
-    reorder_level?: number;
-    supplier_id?: number;
-    specifications?: Record<string, any>;
-}
-
-export interface Supplier {
-    id: number;
-    name: string;
-    contact_name?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    is_active: boolean;
-}
-
-export interface StockMovement {
-    id: number;
-    product_id: number;
-    movement_type: 'IN' | 'OUT' | 'ADJUSTMENT';
-    quantity: number;
-    reference?: string;
-    notes?: string;
-    created_at: string;
-    created_by_id?: number;
-}
-
-
-// --- Technicians ---
-
-export interface TechnicianKPI {
-    technician_id: number;
-    tasks_completed: number;
-    completed_tasks: number; // Some endpoints might use this
-    avg_resolution_time: number;
-    weighted_score: number;
-    average_rating: number;
-    on_time_rate: number;
-    efficiency_score: number;
-}
-
-export interface CustomerSatisfaction {
-    id: number;
-    task_id: number;
-    technician_id: number;
-    rating: number;
-    feedback?: string;
-    created_at: string;
-}
-
-// --- HR ---
-
-export interface EmployeeProfileResponse {
-    id: number;
-    user_id: number;
-    employee_code: string;
-    engagement_type: string;
-    department?: string | null;
-    designation?: string | null;
-    hire_date: string;
-    contract_end_date?: string | null;
-    termination_date?: string | null;
-    is_active: boolean;
-    user?: UserOut;
-}
-
-export type EngagementType = 'FULL_TIME' | 'CONTRACT' | 'TASK_BASED' | 'SERVICE_BASED' | 'HYBRID';
-
-export interface AttendanceRecordResponse {
-    id: number;
-    employee_id: number;
-    date: string;
-    clock_in?: string;
-    clock_out?: string;
-    status: string;
-    total_hours?: number;
-}
-
-export interface PayoutResponse {
-    id: number;
-    employee_id: number;
-    gross_amount: string | number;
-    net_amount: string | number;
-    status: string;
-    period_start: string;
-    period_end: string;
-    approved_by?: number | null;
-    payment_method?: string | null;
-    payment_reference?: string | null;
-    paid_at?: string | null;
-    employee?: EmployeeProfileResponse;
-}
-
-
-export interface RateCardResponse {
-    id: number;
-    employee_id: number;
-    role: string;
-    hourly_rate: number;
-    currency: string;
-    is_active: boolean;
-}
-
-export interface RateCardCreate {
-    employee_id: number;
-    role: string;
-    hourly_rate: number;
-    currency?: string;
-}
-
-export interface ComplaintResponse {
-    id: number;
-    complainant_name: string;
-    subject: string;
-    description: string;
-    status: string;
-    resolution?: string;
-    created_at: string;
-}
-
-export interface ComplaintCreate {
-    subject: string;
-    description: string;
-    complainant_name?: string;
-    complainant_contact?: string;
-    employee_id?: number;
-}
-
-// --- Workflow ---
-
-
-export interface WorkflowDefinitionRead {
-    id: number;
-    name: string;
-    description?: string;
-    trigger_type: string;
-    is_active: boolean;
-    created_at: string;
-    steps: WorkflowStep[];
-}
-
-export interface WorkflowStep {
-    id: string; // usually UUID
-    type: string;
-    name: string;
-    next_steps: string[];
-}
-
-export interface WorkflowInstanceRead {
-    id: number;
-    workflow_id: number;
-    current_step_id: string;
-    status: string; // PENDING, APPROVED, REJECTED
-    context_data?: Record<string, any>;
-    created_at: string;
-    workflow?: WorkflowDefinitionRead;
-}
-
-
-export interface WorkflowGraphCreate {
-    name: string;
-    description?: string;
-    trigger_type: string;
-    steps: WorkflowStep[];
-    edges?: any[]; // Simplified for now
-}
-
-// --- Finance ---
-
-export interface BOMVarianceOut {
-    id: number;
-    project_id: number;
-    task_id: number;
-    variance_amount: number;
-    reason?: string;
-    status: string; // PENDING, APPROVED, REJECTED
-    created_at: string;
-}
-
-export interface ProjectFinancialsOut {
-    project_id: number;
-    total_budget: number;
-    total_cost: number;
-    gross_profit: number;
-    profit_margin: number;
-}
-
-export interface ProfitabilityReportResponse {
-    total_revenue: number;
-    total_cost: number;
-    gross_profit: number;
-    net_profit: number;
-    details: Record<string, any>[];
-}
-
-export interface InfrastructureProfitabilityResponse {
-    infrastructure_type: string;
-    profit_margin: number;
-    revenue: number;
-    cost: number;
-}
-
-export interface FinancialAccount {
-    id: number;
-    name: string;
-    type: string;
-    balance: number;
-    currency: string;
-    is_active: boolean;
-}
-
-export interface FinancialAccountCreate { // New interface
-    name: string;
-    type: string;
-    balance: number;
-    currency: string;
-    is_active?: boolean;
-}
-
-export interface FinancialAccountUpdate { // New interface
-    name?: string;
-    type?: string;
-    balance?: number;
-    currency?: string;
-    is_active?: boolean;
-}
-
-export interface BudgetSummary {
-    project_id: number;
-    total_budget: number;
-    allocated_amount: number;
-    spent_amount: number;
-    remaining_amount: number;
-    variance: number;
-}
-
-// --- Scrapers ---
-
-export interface ScraperRun {
-    supplier_id: number;
-    id: number;
-    status: string;
-    products_scraped: number;
-    products_updated?: number;
-    products_added?: number;
-    error_message?: string | null;
-    execution_time?: number | null;
-    started_at: string;
-    completed_at?: string | null;
-}
-
-export interface PriceHistory {
-    id: number;
-    product_id: number;
-    old_price: number;
-    new_price: number;
-    price_change: number;
-    price_change_percent: number;
-    recorded_at: string;
-}
-
-// --- Permissions & Roles (RBAC) ---
-
-export interface PermissionV2Out {
-    id: number;
-    name: string;
-    codename: string;
-    content_type_id?: number;
-}
-
-export type RoleStatus = 'active' | 'inactive' | 'archived';
-
-export interface HierarchyLevel {
-    level: number;
-    name: string;
-}
-
-export interface RoleHierarchyOut {
-    role: RoleV2Out;
-    children: RoleHierarchyOut[];
-    parent_role_id?: number | null;
-    depth: number;
+export interface PermissionCheck {
+  permission: string;
+  granted: boolean;
 }
 
 export interface PermissionCheckResponse {
-    permission: string;
-    granted: boolean;
+  permission: string;
+  granted: boolean;
 }
 
 export interface PermissionDetail {
-    codename: string;
-    name: string;
+  codename: string;
+  name: string;
 }
 
 export interface MyPermissionsResponse {
-    permissions: PermissionDetail[];
-    count: number;
+  permissions: PermissionDetail[];
+  count: number;
 }
 
-export interface IndependentRoleOut {
-    name: string;
-    id: number;
-    description?: string | null;
-    level: number;
-    scope_level: string | null;
-    status: RoleStatus;
-    is_system_role: boolean;
-    created_at: string;
-    permissions: PermissionV2Out[];
-    is_independent: boolean;
-    floating_scope: string;
-    implementation_logic?: string | null;
+// --- Projects ---
+export type InfrastructureType = 'fiber' | 'wireless' | 'ppoe' | 'hotspot' | 'hybrid';
+export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'on_hold' | 'cancelled';
+export type ProjectPriority = 'low' | 'medium' | 'high' | 'critical';
+
+export interface ProjectOut {
+  id: ID;
+  name: string;
+  project_type?: 'apartment' | 'single_home' | 'commercial';
+  status: ProjectStatus;
+  priority: ProjectPriority;
+  infrastructure_type?: InfrastructureType;
+  division_id?: ID;
+  department_id?: ID;
+  project_manager_id?: ID;
+  tech_lead_id?: ID;
+  budget?: string; // Decimal string
+  actual_cost?: string; // Decimal string
+  created_at: DateString;
+  location_lat?: number;
+  location_lng?: number;
+  coverage_radius?: number;
+  completion_percentage?: number;
+  health_score?: number;
 }
 
-export interface FuzzyMatchResult {
-    target_role_name: string;
-    suggested_parent_id?: number | null;
-    suggested_parent_name?: string | null;
-    suggested_level: HierarchyLevel;
-    confidence: number;
-    reason: string;
+export interface ProjectCreate {
+  name: string;
+  project_type?: 'apartment' | 'single_home' | 'commercial';
+  status?: ProjectStatus;
+  priority?: ProjectPriority;
+  infrastructure_type?: InfrastructureType;
+  division_id?: ID;
+  department_id?: ID;
+  project_manager_id?: ID;
+  tech_lead_id?: ID;
+  budget?: string;
+  location_lat?: number;
+  location_lng?: number;
+  coverage_radius?: number;
 }
 
-export interface AccessPolicyOut {
-    id: number;
-    name: string;
-    description?: string | null;
-    resource: string;
-    action: string;
-    required_roles?: string[] | null;
-    required_permissions?: string[] | null;
-    conditions?: Record<string, any> | null;
-    target_hierarchy_level?: HierarchyLevel | null;
-    start_time?: string | null;
-    end_time?: string | null;
-    active_days?: string[] | null;
-    priority: number;
-    is_active: boolean;
-    created_by?: number | null;
-    created_at: string;
+export interface ProjectUpdate {
+  name?: string;
+  project_type?: 'apartment' | 'single_home' | 'commercial';
+  status?: ProjectStatus;
+  priority?: ProjectPriority;
+  infrastructure_type?: InfrastructureType;
+  division_id?: ID;
+  department_id?: ID;
+  project_manager_id?: ID;
+  tech_lead_id?: ID;
+  budget?: string;
+  actual_cost?: string;
+  location_lat?: number;
+  location_lng?: number;
+  coverage_radius?: number;
+  completion_percentage?: number;
+  health_score?: number;
 }
 
-export interface FeaturePolicyRequest {
-    feature_name: string;
-    resources: string[];
-    actions: string[];
-    conditions?: Record<string, any> | null;
+export interface MilestoneOut {
+  id: ID;
+  project_id: ID;
+  name: string;
+  description?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'delayed';
+  due_date?: DateString;
+  completed_date?: DateString;
+  order_index?: number;
+  progress?: number;
 }
 
-export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending';
-
-export interface UserStatusUpdateRequest {
-    status: UserStatus;
-    reason?: string | null;
+export interface MilestoneCreate {
+  project_id: ID;
+  name: string;
+  description?: string;
+  due_date?: DateString;
+  order_index?: number;
 }
 
-// --- Finance Extensions ---
+export interface MilestoneUpdate {
+  name?: string;
+  description?: string;
+  status?: 'pending' | 'in_progress' | 'completed' | 'delayed';
+  due_date?: DateString;
+  completed_date?: DateString;
+  order_index?: number;
+  progress?: number;
+}
+
+export interface ProjectBudgetSummary {
+  project_id: ID;
+  total_budget: number;
+  total_allocated: number;
+  total_spent: number;
+  remaining: number;
+  percent_used: number;
+  by_category: Record<string, number>; // e.g., { "labor": 5000, "materials": 2000 }
+  status: ProjectStatus;
+}
+
+// --- Tasks & Workforce ---
+export type TaskStatus = 'pending' | 'in_progress' | 'awaiting_approval' | 'completed' | 'cancelled';
+export type AssignedRole = 'tech_lead' | 'project_manager' | 'technician' | 'customer_support';
+
+export interface TaskOut {
+  id: ID;
+  project_id?: ID;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: ProjectPriority;
+  assigned_role?: AssignedRole;
+  assigned_to_id?: ID;
+  department_id?: ID;
+  estimated_hours?: string; // Decimal string
+  actual_hours?: string; // Decimal string
+  scheduled_date?: DateString;
+  dependencies?: ID[]; // Array of Task IDs this task depends on
+  created_at: DateString;
+  updated_at?: DateString;
+}
+
+export interface TaskCreate {
+  project_id?: ID;
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: ProjectPriority;
+  assigned_role?: AssignedRole;
+  assigned_to_id?: ID;
+  department_id?: ID;
+  estimated_hours?: string;
+  scheduled_date?: DateString;
+  dependencies?: ID[];
+}
+
+export interface TaskUpdate {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: ProjectPriority;
+  assigned_role?: AssignedRole;
+  assigned_to_id?: ID;
+  department_id?: ID;
+  estimated_hours?: string;
+  actual_hours?: string;
+  scheduled_date?: DateString;
+  dependencies?: ID[];
+}
+
+export interface TechnicianPerformance {
+  technician_id: ID;
+  tasks_assigned: number;
+  tasks_completed: number;
+  first_time_fixes: number;
+  completion_rate: string; // Percentage string
+  on_time_rate: string;
+  avg_variance_pct: string;
+  altitude_level: number; // Technician seniority level
+}
+
+// --- Inventory & Supply Chain ---
+export interface Supplier {
+  id: ID;
+  name: string;
+  website?: string;
+  contact_email?: string;
+  is_active: boolean;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+}
+
+export interface ProductOut {
+  id: ID;
+  supplier_id: ID;
+  name: string;
+  sku?: string;
+  category?: string;
+  unit_price: number;
+  quantity_in_stock: number;
+  reorder_level: number;
+  low_inventory_threshold: number;
+  is_empty_product: boolean; // Virtual product flag
+  tr069_serial_number?: string;
+  tr069_mac_address?: string;
+  specifications?: Record<string, any>;
+  image_url?: string; // Derived from BLOB endpoint
+}
+
+export interface ProductCreate {
+  supplier_id: ID;
+  name: string;
+  sku?: string;
+  category?: string;
+  unit_price: number;
+  quantity_in_stock: number;
+  reorder_level?: number;
+  low_inventory_threshold?: number;
+  is_empty_product?: boolean;
+  tr069_serial_number?: string;
+  tr069_mac_address?: string;
+  specifications?: Record<string, any>;
+  image_url?: string;
+}
+
+export interface ProductUpdate {
+  supplier_id?: ID;
+  name?: string;
+  sku?: string;
+  category?: string;
+  unit_price?: number;
+  quantity_in_stock?: number;
+  reorder_level?: number;
+  low_inventory_threshold?: number;
+  is_empty_product?: boolean;
+  tr069_serial_number?: string;
+  tr069_mac_address?: string;
+  specifications?: Record<string, any>;
+  image_url?: string;
+}
+
+export interface PurchaseOrderOut {
+  id: ID;
+  purchase_number: string;
+  supplier_id: ID;
+  total_amount: string;
+  status: 'draft' | 'pending' | 'approved' | 'ordered' | 'received';
+  items: PurchaseOrderItemOut[];
+  created_at: DateString;
+}
+
+export interface PurchaseOrderCreate {
+  supplier_id: ID;
+  items: PurchaseOrderItemCreate[];
+}
+
+export interface PurchaseOrderUpdate {
+  supplier_id?: ID;
+  total_amount?: string;
+  status?: 'draft' | 'pending' | 'approved' | 'ordered' | 'received';
+  items?: PurchaseOrderItemUpdate[];
+}
+
+export interface PurchaseOrderItemOut {
+  product_id: ID;
+  quantity: number;
+  unit_price: string;
+  total_price: string;
+}
+
+export interface PurchaseOrderItemCreate {
+  product_id: ID;
+  quantity: number;
+  unit_price: string;
+}
+
+export interface PurchaseOrderItemUpdate {
+  product_id?: ID;
+  quantity?: number;
+  unit_price?: string;
+  total_price?: string;
+}
+
+// --- Finance & M-Pesa ---
+export type MpesaTransactionType = 'PayBill' | 'BuyGoods' | 'B2C' | 'B2B';
+export type MpesaTransactionStatus = 'Pending' | 'Completed' | 'Failed';
 
 export interface MpesaTransactionOut {
-    id: number;
-    transaction_type: string;
-    mpesa_receipt_number?: string | null;
-    transaction_date?: string | null;
-    phone_number: string;
-    amount: number;
-    status: string;
-    result_desc?: string | null;
-    result_code?: number | null;
-    reference?: string | null;
-    description?: string | null;
-    created_at: string;
-    updated_at?: string | null;
-}
-
-export type BudgetUsageType = 'expense' | 'allocation' | 'adjustment';
-export type BudgetUsageStatus = 'approved' | 'pending' | 'rejected';
-export type SubBudgetType = string; // Using string as default if enum is not strictly defined yet
-
-export interface MasterBudget {
-    id: number;
-    name: string;
-    start_date: string;
-    end_date: string;
-    total_amount: string | number;
-    created_at: string;
-    updated_at?: string | null;
-    sub_budgets: SubBudget[];
-}
-
-export interface MasterBudgetCreate { // New interface
-    name: string;
-    start_date: string;
-    end_date: string;
-    total_amount: number; // Use number for creation
-}
-
-export interface MasterBudgetUpdate { // New interface
-    name?: string;
-    start_date?: string;
-    end_date?: string;
-    total_amount?: number;
-}
-
-export interface SubBudget {
-    id: number;
-    name: SubBudgetType;
-    amount: string | number;
-    financial_account_id?: number | null;
-    master_budget_id: number;
-    usages: BudgetUsage[];
-}
-
-export interface SubBudgetCreate { // New interface
-    name: SubBudgetType;
-    amount: number;
-    financial_account_id?: number;
-    master_budget_id: number;
-}
-
-export interface SubBudgetUpdate { // New interface
-    name?: SubBudgetType;
-    amount?: number;
-    financial_account_id?: number;
-}
-
-export interface BudgetUsage {
-    id: number;
-    sub_budget_id: number;
-    description?: string | null;
-    amount: string | number;
-    type: BudgetUsageType;
-    transaction_date: string;
-    status: BudgetUsageStatus | null;
-    created_at: string;
-    updated_at?: string | null;
-}
-
-export interface BudgetUsageCreate { // New interface
-    sub_budget_id: number;
-    description?: string;
-    amount: number;
-    type: BudgetUsageType;
-    transaction_date: string;
-}
-
-export interface BudgetUsageUpdate { // New interface
-    description?: string;
-    amount?: number;
-    type?: BudgetUsageType;
-    transaction_date?: string;
-    status?: BudgetUsageStatus;
-}
-
-export interface Invoice { // New interface
-    id: number;
-    invoice_number: string;
-    customer_id?: number;
-    customer_name?: string;
-    issue_date: string;
-    due_date: string;
-    total_amount: number;
-    currency: string;
-    status: 'Pending' | 'Paid' | 'Overdue' | 'Cancelled';
-    items: InvoiceItem[];
-    created_at: string;
-    updated_at: string;
-}
-
-export interface InvoiceItem { // New interface
-    id: number;
-    description: string;
-    quantity: number;
-    unit_price: number;
-    total: number;
-}
-
-export interface InvoiceCreate { // New interface
-    customer_id?: number;
-    customer_name?: string;
-    issue_date: string;
-    due_date: string;
-    items: InvoiceItemCreate[];
-}
-
-export interface InvoiceItemCreate { // New interface
-    description: string;
-    quantity: number;
-    unit_price: number;
-}
-
-export interface InvoiceUpdate { // New interface
-    customer_id?: number;
-    customer_name?: string;
-    issue_date?: string;
-    due_date?: string;
-    total_amount?: number;
-    status?: 'Pending' | 'Paid' | 'Overdue' | 'Cancelled';
-    items?: InvoiceItemUpdate[];
-}
-
-export interface InvoiceItemUpdate { // New interface
-    id?: number; // Optional for existing items
-    description?: string;
-    quantity?: number;
-    unit_price?: number;
-    total?: number;
+  id: ID;
+  transaction_type: MpesaTransactionType;
+  mpesa_receipt_number?: string;
+  transaction_date?: DateString;
+  phone_number: string;
+  amount: number;
+  status: MpesaTransactionStatus;
+  result_code?: number;
+  result_desc?: string;
+  reference?: string;
+  description?: string;
+  created_at: DateString;
+  updated_at?: DateString;
 }
 
 export interface MpesaC2BRequest {
-    phone_number: string;
-    amount: number;
-    bill_ref_number: string;
+  phone_number: string;
+  amount: number;
+  bill_ref_number: string;
 }
 
 export interface MpesaSTKPushRequest {
-    phone_number: string;
-    amount: number;
-    account_reference: string;
-    description?: string;
+  phone_number: string;
+  amount: number;
+  account_reference: string;
+  description?: string;
 }
 
 export interface MpesaQRCodeRequest {
-    amount: number;
-    merchant_name: string;
-    ref_no: string;
-    trx_code?: string;
+  amount: number;
+  merchant_name: string;
+  ref_no: string;
+  trx_code?: string;
 }
 
 export interface MpesaB2CRequest {
-    phone_number: string;
-    amount: number;
-    remarks: string;
-    occasion?: string;
+  phone_number: string;
+  amount: number;
+  remarks: string;
+  occasion?: string;
 }
 
 export interface MpesaB2BRequest {
-    amount: number;
-    receiver_shortcode: string;
-    account_reference: string;
+  amount: number;
+  receiver_shortcode: string;
+  account_reference: string;
 }
 
 export interface MpesaTaxRemittanceRequest {
-    amount: number;
-    remarks: string;
+  amount: number;
+  remarks: string;
 }
 
 export interface MpesaRatibaCreate {
-    name: string;
-    amount: number;
-    phone_number: string;
-    start_date: string;
-    end_date: string;
-    frequency: string;
+  name: string;
+  amount: number;
+  phone_number: string;
+  start_date: string;
+  end_date: string;
+  frequency: string;
 }
 
 export interface MpesaTransactionStatusRequest {
-    transaction_id: string;
+  checkout_request_id?: string;
+  conversation_id?: string;
+  originator_conversation_id?: string;
 }
 
 export interface MpesaReverseTransactionRequest {
-    transaction_id: string;
-    amount: number;
-    remarks?: string;
-    receiver_party?: string;
+  transaction_id: string;
+  amount: number;
+  remarks?: string;
+  receiver_party?: string;
+}
+
+// Invoice types
+export type InvoiceStatus = 'Pending' | 'Paid' | 'Overdue' | 'Cancelled' | 'SENT';
+
+export interface InvoiceOut {
+  id: ID;
+  invoice_number: string;
+  project_id?: ID;
+  customer_name?: string;
+  issue_date: DateString;
+  due_date: DateString;
+  total_amount: number;
+  amount_paid?: number;
+  currency: string;
+  status: InvoiceStatus;
+  items: InvoiceItemOut[];
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+export interface InvoiceCreate {
+  project_id?: ID;
+  customer_name?: string;
+  issue_date: DateString;
+  due_date: DateString;
+  items: InvoiceItemCreate[];
+}
+
+export interface InvoiceUpdate {
+  project_id?: ID;
+  customer_name?: string;
+  issue_date?: DateString;
+  due_date?: DateString;
+  total_amount?: number;
+  amount_paid?: number;
+  currency?: string;
+  status?: InvoiceStatus;
+  items?: InvoiceItemUpdate[];
+}
+
+export interface InvoiceItemOut {
+  id: ID;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+export interface InvoiceItemCreate {
+  description: string;
+  quantity: number;
+  unit_price: number;
+}
+
+export interface InvoiceItemUpdate {
+  id?: ID;
+  description?: string;
+  quantity?: number;
+  unit_price?: number;
+}
+
+// Financial Account types
+export interface FinancialAccount {
+  id: ID;
+  name: string;
+  type: string;
+  balance: number;
+  currency: string;
+  is_active: boolean;
+}
+
+export interface FinancialAccountCreate {
+  name: string;
+  type: string;
+  balance: number;
+  currency: string;
+  is_active?: boolean;
+}
+
+export interface FinancialAccountUpdate {
+  name?: string;
+  type?: string;
+  balance?: number;
+  currency?: string;
+  is_active?: boolean;
+}
+
+// Budget types
+export type MasterBudgetStatus = 'active' | 'inactive' | 'completed';
+export type SubBudgetType = string; // e.g., 'Operational', 'Marketing', 'Project'
+export type BudgetUsageType = 'expense' | 'allocation' | 'adjustment';
+export type BudgetUsageStatus = 'approved' | 'pending' | 'rejected';
+
+export interface MasterBudgetOut {
+  id: ID;
+  name: string;
+  start_date: DateString;
+  end_date: DateString;
+  total_amount: number;
+  allocated_amount?: number;
+  spent_amount?: number;
+  remaining_amount?: number;
+  status: MasterBudgetStatus;
+  created_at: DateString;
+  updated_at?: DateString;
+}
+
+export interface MasterBudgetCreate {
+  name: string;
+  start_date: DateString;
+  end_date: DateString;
+  total_amount: number;
+}
+
+export interface MasterBudgetUpdate {
+  name?: string;
+  start_date?: DateString;
+  end_date?: DateString;
+  total_amount?: number;
+  status?: MasterBudgetStatus;
+}
+
+export interface SubBudgetOut {
+  id: ID;
+  master_budget_id: ID;
+  name: SubBudgetType;
+  category: string;
+  allocated_amount: number;
+  spent_amount?: number;
+  remaining_amount?: number;
+  status: MasterBudgetStatus; // Should be sub-budget status
+  created_at: DateString;
+  updated_at?: DateString;
+}
+
+export interface SubBudgetCreate {
+  master_budget_id: ID;
+  name: SubBudgetType;
+  category: string;
+  allocated_amount: number;
+}
+
+export interface SubBudgetUpdate {
+  name?: SubBudgetType;
+  category?: string;
+  allocated_amount?: number;
+  status?: MasterBudgetStatus;
+}
+
+export interface BudgetUsageOut {
+  id: ID;
+  sub_budget_id: ID;
+  description: string;
+  amount: number;
+  type: BudgetUsageType;
+  status: BudgetUsageStatus;
+  transaction_date: DateString;
+  approved_by_id?: ID;
+  approved_at?: DateString;
+  notes?: string;
+  created_at: DateString;
+  updated_at?: DateString;
+}
+
+export interface BudgetUsageCreate {
+  sub_budget_id: ID;
+  description: string;
+  amount: number;
+  type: BudgetUsageType;
+  transaction_date: DateString;
+}
+
+export interface BudgetUsageUpdate {
+  description?: string;
+  amount?: number;
+  type?: BudgetUsageType;
+  status?: BudgetUsageStatus;
+  transaction_date?: DateString;
+  approved_by_id?: ID;
+  approved_at?: DateString;
+  notes?: string;
+}
+
+export interface FinancialSnapshotResponse {
+  generated_at: DateString;
+  total_assets: number;
+  total_liabilities: number;
+  net_worth: number;
+  active_projects: Record<string, any>;
+  monthly_performance: {
+    revenue: number;
+    costs: number;
+    profit: number;
+  };
+  receivables: {
+    total_outstanding: number;
+    overdue_count: number;
+  };
+  infrastructure_performance: Record<string, any>;
+  top_infrastructure?: string;
+}
+
+export interface InfrastructureProfitabilityResponse {
+  infrastructure_type: string;
+  profit_margin: number;
+  revenue: number;
+  cost: number;
+}
+
+export interface ProfitabilityReportResponse {
+  total_revenue: number;
+  total_cost: number;
+  gross_profit: number;
+  net_profit: number;
+  details: Record<string, any>[];
 }
 
 // NCBA Bank
 export interface NcbaPayRequest {
-    account_number: string;
-    amount: number;
-    currency?: string;
+  account_number: string;
+  amount: number;
+  currency?: string;
 }
 
-export interface FinancialSnapshotResponse {
-    generated_at: string;
-    active_projects: Record<string, any>;
-    monthly_performance: Record<string, any>;
-    receivables: Record<string, any>;
-    infrastructure_performance: Record<string, any>;
-    top_infrastructure?: string | null;
+// BOM Variance types
+export type BOMVarianceStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface BOMVarianceOut {
+  id: ID;
+  project_id: ID;
+  task_id?: ID;
+  item_name?: string; // e.g., "Fiber Optic Cable"
+  variance_amount: number;
+  reason?: string;
+  status: BOMVarianceStatus;
+  created_at: DateString;
+  approved_by_id?: ID;
+  approved_at?: DateString;
+  notes?: string; // Approval notes
 }
 
-// --- CRM ---
-
-export interface Lead {
-    id: number;
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone?: string;
-    company?: string;
-    status: 'New' | 'Contacted' | 'Qualified' | 'Unqualified';
-    source?: string;
-    created_at: string;
-    updated_at: string;
-    owner_id?: number; // UserOut.id
-    description?: string;
+export interface BOMVarianceCreate {
+  project_id: ID;
+  task_id?: ID;
+  item_name: string;
+  variance_amount: number;
+  reason?: string;
 }
 
-export interface LeadCreate {
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone?: string;
-    company?: string;
-    status?: 'New' | 'Contacted' | 'Qualified' | 'Unqualified';
-    source?: string;
-    description?: string;
-    owner_id?: number;
+export interface BOMVarianceUpdate {
+  item_name?: string;
+  variance_amount?: number;
+  reason?: string;
+  status?: BOMVarianceStatus;
 }
 
-export interface LeadUpdate {
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    phone?: string;
-    company?: string;
-    status?: 'New' | 'Contacted' | 'Qualified' | 'Unqualified';
-    source?: string;
-    description?: string;
-    owner_id?: number;
+export interface BudgetTemplateDownloadLink {
+  download_url: string;
 }
 
-export interface Deal {
-    id: number;
-    name: string;
-    amount: number;
-    stage: 'Prospecting' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
-    close_date?: string; // Date string
-    created_at: string;
-    updated_at: string;
-    lead_id?: number;
-    owner_id?: number; // UserOut.id
-    description?: string;
+export interface BudgetUploadResult {
+  message: string;
+  total_records: number;
+  successful_uploads: number;
+  failed_uploads: number;
+  errors?: string[];
 }
 
-export interface DealCreate {
-    name: string;
-    amount: number;
-    stage?: 'Prospecting' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
-    close_date?: string;
-    lead_id?: number;
-    owner_id?: number;
-    description?: string;
+// --- HR & Payroll ---
+export type EngagementType = 'FULL_TIME' | 'CONTRACT' | 'TASK_BASED' | 'SERVICE_BASED' | 'HYBRID';
+
+export interface EmployeeProfileOut {
+  id: ID;
+  user_id: ID;
+  employee_code: string;
+  engagement_type: EngagementType;
+  department?: string;
+  designation?: string;
+  hire_date: DateString;
+  is_active: boolean;
+  bank_name?: string;
+  bank_account?: string;
+  tax_id?: string;
 }
 
-export interface DealUpdate {
-    name?: string;
-    amount?: number;
-    stage?: 'Prospecting' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
-    close_date?: string;
-    lead_id?: number;
-    owner_id?: number;
-    description?: string;
+export interface AttendanceRecordOut {
+  id: ID;
+  employee_id: ID;
+  date: DateString;
+  check_in?: DateString; // ISO timestamp
+  check_out?: DateString;
+  hours_worked: string;
+  status: 'present' | 'absent' | 'leave';
+  check_in_location?: string;
 }
 
-export interface Activity {
-    id: number;
-    activity_type: 'Call' | 'Meeting' | 'Email' | 'Task';
-    due_date?: string; // Date string
-    status: 'Pending' | 'Completed' | 'Cancelled';
-    notes?: string;
-    created_at: string;
-    updated_at: string;
-    lead_id?: number;
-    deal_id?: number;
-    assigned_to_id?: number; // UserOut.id
+export interface PayoutOut {
+  id: ID;
+  employee_id: ID;
+  gross_amount: string;
+  net_amount: string;
+  status: 'PENDING' | 'APPROVED' | 'PAID';
+  period_start: DateString;
+  period_end: DateString;
 }
 
-export interface ActivityCreate {
-    activity_type: 'Call' | 'Meeting' | 'Email' | 'Task';
-    due_date?: string;
-    status?: 'Pending' | 'Completed' | 'Cancelled';
-    notes?: string;
-    lead_id?: number;
-    deal_id?: number;
-    assigned_to_id?: number;
+// --- Workflow Engine (React Flow Compatible) ---
+export interface WorkflowDefinitionOut {
+  id: ID;
+  name: string;
+  model_name: string; // e.g., 'Project', 'PurchaseOrder'
+  status: 'draft' | 'active';
+  workflow_graph: {
+    nodes: ReactFlowNode[];
+    edges: ReactFlowEdge[];
+    viewport?: { x: number; y: number; zoom: number };
+  };
 }
 
-export interface ActivityUpdate { // New interface
-    activity_type?: 'Call' | 'Meeting' | 'Email' | 'Task';
-    due_date?: string;
-    status?: 'Pending' | 'Completed' | 'Cancelled';
-    notes?: string;
-    lead_id?: number;
-    deal_id?: number;
-    assigned_to_id?: number;
+export interface ReactFlowNode {
+  id: string;
+  type: string; // 'input', 'default', 'output'
+  position: { x: number; y: number };
+  data: {
+    label: string;
+    required_role?: string;
+    approval_type?: 'sequential' | 'parallel';
+  };
+}
+
+export interface ReactFlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  type?: string;
+  animated?: boolean;
+}
+
+export interface WorkflowInstanceOut {
+  id: ID;
+  workflow_id: ID;
+  related_model: string;
+  related_id: ID;
+  current_stage_id?: ID;
+  status: 'pending' | 'approved' | 'rejected';
+  execution_path?: number[];
+}
+
+// --- CRM & Leads ---
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'unqualified';
+
+export interface LeadOut {
+  id: ID;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  source: 'website' | 'referral' | 'cold_call';
+  status: LeadStatus;
+  rating?: number;
+  assigned_to_id?: ID;
+  created_at: DateString;
+}
+
+export interface DealOut {
+  id: ID;
+  lead_id: ID;
+  name: string;
+  value: number;
+  stage: 'prospecting' | 'negotiation' | 'closed_won' | 'closed_lost';
+  probability: number; // 0-100
+  expected_close_date?: DateString;
+}
+
+// --- Audit Logs ---
+export interface AuditLogOut {
+  id: ID;
+  user_id?: ID;
+  user_email?: string;
+  action: string; // e.g., 'create', 'delete', 'login'
+  resource: string; // e.g., 'project', 'user'
+  resource_id?: string;
+  ip_address?: string;
+  details?: Record<string, any>; // JSON diff or metadata
+  created_at: DateString;
 }
