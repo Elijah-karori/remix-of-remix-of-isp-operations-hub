@@ -30,6 +30,7 @@ import {
   WorkflowGraphCreate,
   BOMVarianceOut,
   ProjectFinancialsOut,
+  InfrastructureProfitabilityResponse,
   ProfitabilityReportResponse,
   ScraperRun,
   PriceHistory,
@@ -41,6 +42,7 @@ import {
   UserStatus,
   UserStatusUpdateRequest,
   MpesaTransactionOut,
+  MpesaTransactionStatusRequest,
   MasterBudget,
   MasterBudgetCreate,
   MasterBudgetUpdate,
@@ -817,11 +819,11 @@ export const financeApi = {
     apiFetch<Invoice[]>(`/api/v1/finance/payments/overdue?days_overdue=${daysOverdue}`),
 
   // Analytics
-  infrastructureProfitability: (startDate?: string, endDate?: string) => {
+  infrastructureProfitability: (startDate?: string, endDate?: string): Promise<InfrastructureProfitabilityResponse[]> => {
     const params = new URLSearchParams();
     if (startDate) params.append("start_date", startDate);
     if (endDate) params.append("end_date", endDate);
-    return apiFetch(`/api/v1/finance/analytics/infrastructure-profitability?${params}`);
+    return apiFetch<InfrastructureProfitabilityResponse[]>(`/api/v1/finance/analytics/infrastructure-profitability?${params}`);
   },
 
   budgetAllocationRecommendation: (totalBudget: number, periodMonths = 12) =>
@@ -833,8 +835,8 @@ export const financeApi = {
       body: JSON.stringify(data)
     }),
 
-  monthlyProfit: (year: number, month: number) =>
-    apiFetch(`/api/v1/finance/analytics/monthly-profit/${year}/${month}`),
+  monthlyProfit: (year: number, month: number): Promise<number> =>
+    apiFetch<number>(`/api/v1/finance/analytics/monthly-profit/${year}/${month}`),
 
   // Account Reconciliation
   reconcileAccounts: (data: { period_start: string; period_end: string }) =>
@@ -895,7 +897,6 @@ export const mpesaApi = {
       body: JSON.stringify(data)
     }),
 
-  // Ratiba (Standing Orders)
   createRatiba: (data: {
     name: string;
     amount: number;
@@ -903,8 +904,8 @@ export const mpesaApi = {
     start_date: string;
     end_date: string;
     frequency: string;
-  }) =>
-    apiFetch("/api/v1/finance/mpesa/ratiba/create", {
+  }): Promise<{ name: string; id: number }> =>
+    apiFetch<{ name: string; id: number }>("/api/v1/finance/mpesa/ratiba/create", {
       method: "POST",
       body: JSON.stringify(data)
     }),
@@ -913,10 +914,10 @@ export const mpesaApi = {
   checkBalance: () =>
     apiFetch("/api/v1/finance/mpesa/balance"),
 
-  checkTransactionStatus: (transactionId: string) =>
-    apiFetch("/api/v1/finance/mpesa/transaction/status", {
+  checkTransactionStatus: (data: MpesaTransactionStatusRequest): Promise<any> =>
+    apiFetch<any>("/api/v1/finance/mpesa/transaction/status", {
       method: "POST",
-      body: JSON.stringify({ transaction_id: transactionId })
+      body: JSON.stringify(data)
     }),
 
   reverseTransaction: (data: { transaction_id: string; amount: number; remarks?: string; receiver_party?: string }) =>
@@ -940,8 +941,8 @@ export const mpesaApi = {
     apiFetch<MpesaTransactionOut>(`/api/v1/finance/mpesa/transactions/receipt/${receiptNumber}`),
 
   // Reconciliation
-  reconcile: (startDate: string, endDate: string) =>
-    apiFetch("/api/v1/finance/mpesa/reconcile", {
+  reconcile: (startDate: string, endDate: string): Promise<any> =>
+    apiFetch<any>("/api/v1/finance/mpesa/reconcile", {
       method: "POST",
       body: JSON.stringify({ start_date: startDate, end_date: endDate })
     }),

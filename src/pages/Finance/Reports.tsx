@@ -96,29 +96,29 @@ export default function Reports() {
       startY: 45,
       head: [['Metric', 'Value']],
       body: [
-        ['Total Revenue', `KES ${report.total_revenue.toLocaleString()}`],
-        ['Total Cost', `KES ${report.total_cost.toLocaleString()}`],
-        ['Gross Profit', `KES ${report.gross_profit.toLocaleString()}`],
-        ['Net Profit', `KES ${report.net_profit.toLocaleString()}`],
+        ['Total Revenue', `KES ${report.total_revenue?.toLocaleString() ?? '0'}`],
+        ['Total Cost', `KES ${report.total_cost?.toLocaleString() ?? '0'}`],
+        ['Gross Profit', `KES ${report.gross_profit?.toLocaleString() ?? '0'}`],
+        ['Net Profit', `KES ${report.net_profit?.toLocaleString() ?? '0'}`],
       ],
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0] },
       footStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0], fontStyle: 'bold' },
     });
-    
+
     // Add detailed sections if available in report.details
     if (report.details && report.details.length > 0) {
-        doc.addPage();
-        doc.setFontSize(14);
-        doc.text('Detailed Breakdown', 14, 20);
-        (doc as any).autoTable({
-            startY: 30,
-            head: [Object.keys(report.details[0])], // Assumes all detail objects have same keys
-            body: report.details.map(row => Object.values(row).map(val => typeof val === 'number' ? val.toLocaleString() : val)),
-            theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-        });
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.text('Detailed Breakdown', 14, 20);
+      (doc as any).autoTable({
+        startY: 30,
+        head: [Object.keys(report.details[0])], // Assumes all detail objects have same keys
+        body: report.details.map(row => Object.values(row).map(val => typeof val === 'number' ? val.toLocaleString() : val)),
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+      });
     }
 
     doc.save(`Profitability_Report_${format(new Date(), 'yyyyMMdd')}.pdf`);
@@ -163,9 +163,9 @@ export default function Reports() {
                   {generateProfitabilityReportMutation.isPending ? 'Generating...' : 'Generate Report'}
                 </Button>
                 {generatedReport && (
-                    <Button variant="outline" size="sm" onClick={() => downloadProfitabilityPdf(generatedReport)}>
-                        <Download className="h-4 w-4 mr-2" /> Download PDF
-                    </Button>
+                  <Button variant="outline" size="sm" onClick={() => downloadProfitabilityPdf(generatedReport)}>
+                    <Download className="h-4 w-4 mr-2" /> Download PDF
+                  </Button>
                 )}
               </div>
             </div>
@@ -208,52 +208,52 @@ export default function Reports() {
               </Popover>
             </div>
             {generatedReport && (
-                <div className="mt-4 p-4 border rounded-md">
-                    <h3 className="text-lg font-semibold mb-2">Generated Report Summary</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-muted-foreground">Total Revenue</p>
-                            <p className="text-xl font-bold">KES {generatedReport.total_revenue.toLocaleString()}</p>
-                        </div>
-                        <div>
-                            <p className="text-muted-foreground">Total Cost</p>
-                            <p className="text-xl font-bold">KES {generatedReport.total_cost.toLocaleString()}</p>
-                        </div>
-                        <div>
-                            <p className="text-muted-foreground">Gross Profit</p>
-                            <p className="text-xl font-bold text-green-600">KES {generatedReport.gross_profit.toLocaleString()}</p>
-                        </div>
-                        <div>
-                            <p className="text-muted-foreground">Net Profit</p>
-                            <p className="text-xl font-bold text-green-600">KES {generatedReport.net_profit.toLocaleString()}</p>
-                        </div>
-                    </div>
-                    {/* Add detailed breakdown if report.details exists */}
-                    {generatedReport.details && generatedReport.details.length > 0 && (
-                        <div className="mt-4">
-                            <h4 className="font-medium text-muted-foreground mb-2">Detailed Breakdown</h4>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        {/* Assuming all detail objects have same keys */}
-                                        {Object.keys(generatedReport.details[0]).map(key => (
-                                            <TableHead key={key}>{key.replace(/_/g, ' ')}</TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {generatedReport.details.map((row, idx) => (
-                                        <TableRow key={idx}>
-                                            {Object.values(row).map((val, valIdx) => (
-                                                <TableCell key={valIdx}>{typeof val === 'number' ? val.toLocaleString() : val}</TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
+              <div className="mt-4 p-4 border rounded-md">
+                <h3 className="text-lg font-semibold mb-2">Generated Report Summary</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-muted-foreground">Total Revenue</p>
+                    <p className="text-xl font-bold">KES {generatedReport.total_revenue?.toLocaleString() ?? '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Total Cost</p>
+                    <p className="text-xl font-bold">KES {generatedReport.total_cost?.toLocaleString() ?? '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Gross Profit</p>
+                    <p className="text-xl font-bold text-green-600">KES {generatedReport.gross_profit?.toLocaleString() ?? '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Net Profit</p>
+                    <p className="text-xl font-bold text-green-600">KES {generatedReport.net_profit?.toLocaleString() ?? '0'}</p>
+                  </div>
                 </div>
+                {/* Add detailed breakdown if report.details exists */}
+                {generatedReport.details && generatedReport.details.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-muted-foreground mb-2">Detailed Breakdown</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {/* Assuming all detail objects have same keys */}
+                          {Object.keys(generatedReport.details[0]).map(key => (
+                            <TableHead key={key}>{key.replace(/_/g, ' ')}</TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {generatedReport.details.map((row, idx) => (
+                          <TableRow key={idx}>
+                            {Object.values(row).map((val, valIdx) => (
+                              <TableCell key={valIdx}>{typeof val === 'number' ? val?.toLocaleString() : (val ?? '-')}</TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -266,7 +266,7 @@ export default function Reports() {
               <CardDescription>Profitability by infrastructure type over the selected period.</CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={refetchInfraProfit}>
-                <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
             </Button>
           </CardHeader>
           <CardContent>
@@ -280,7 +280,7 @@ export default function Reports() {
                       <LineChart className="h-6 w-6 text-primary" />
                       <div>
                         <p className="font-medium">{item.infrastructure_type}</p>
-                        <p className="text-sm text-muted-foreground">Revenue: KES {item.revenue.toLocaleString()} | Cost: KES {item.cost.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">Revenue: KES {item.revenue?.toLocaleString() ?? '0'} | Cost: KES {item.cost?.toLocaleString() ?? '0'}</p>
                       </div>
                     </div>
                     <Badge variant={item.profit_margin >= 0 ? 'default' : 'destructive'}>
@@ -297,48 +297,48 @@ export default function Reports() {
 
         {/* Monthly Profit */}
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Monthly Profit</CardTitle>
-                    <CardDescription>View profit for a specific month and year.</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                    <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                        <SelectTrigger className="w-[100px]">
-                            <SelectValue placeholder="Year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {years.map(year => (
-                                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-                        <SelectTrigger className="w-[120px]">
-                            <SelectValue placeholder="Month" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {months.map(month => (
-                                <SelectItem key={month} value={month.toString()}>{format(new Date(currentYear, month - 1, 1), 'MMM')}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="sm" onClick={refetchMonthlyProfit}>
-                        <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {isLoadingMonthlyProfit ? (
-                    <LoadingSkeleton variant="inline" count={1} />
-                ) : monthlyProfitError ? (
-                    <ErrorState message="Failed to load monthly profit" onRetry={refetchMonthlyProfit} />
-                ) : monthlyProfit ? (
-                    <p className="text-3xl font-bold">KES {monthlyProfit.toLocaleString()}</p>
-                ) : (
-                    <p className="text-muted-foreground">No data for selected month.</p>
-                )}
-            </CardContent>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Monthly Profit</CardTitle>
+              <CardDescription>View profit for a specific month and year.</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map(month => (
+                    <SelectItem key={month} value={month.toString()}>{format(new Date(currentYear, month - 1, 1), 'MMM')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={refetchMonthlyProfit}>
+                <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoadingMonthlyProfit ? (
+              <LoadingSkeleton variant="inline" count={1} />
+            ) : monthlyProfitError ? (
+              <ErrorState message="Failed to load monthly profit" onRetry={refetchMonthlyProfit} />
+            ) : monthlyProfit !== undefined ? (
+              <p className="text-3xl font-bold">KES {monthlyProfit?.toLocaleString() ?? '0'}</p>
+            ) : (
+              <p className="text-muted-foreground">No data for selected month.</p>
+            )}
+          </CardContent>
         </Card>
       </div>
     </DashboardLayout>

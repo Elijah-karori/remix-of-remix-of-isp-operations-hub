@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { financeApi, mpesaApi, ncbaApi } from '@/lib/api'; // Added mpesaApi, ncbaApi
-import { 
-  MasterBudget, MasterBudgetCreate, MasterBudgetUpdate, 
+import {
+  MasterBudget, MasterBudgetCreate, MasterBudgetUpdate,
   SubBudget, SubBudgetCreate, SubBudgetUpdate,
   BudgetUsage, BudgetUsageCreate, BudgetUsageUpdate, BudgetUsageStatus,
   Invoice, InvoiceCreate, InvoiceUpdate,
@@ -94,7 +94,7 @@ export const useSubBudget = (id: number) => {
 export const useCreateSubBudget = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ masterBudgetId, data }: { masterBudgetId: number; data: SubBudgetCreate }) => 
+    mutationFn: ({ masterBudgetId, data }: { masterBudgetId: number; data: SubBudgetCreate }) =>
       financeApi.createSubBudget(masterBudgetId, data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['finance', 'master-budget', data.master_budget_id, 'sub-budgets'] });
@@ -190,26 +190,33 @@ export const useDeleteBudgetUsage = () => {
 };
 
 export const useApproveBudgetUsage = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-      mutationFn: ({ id, approved, notes }: { id: number; approved: boolean; notes?: string }) => 
-        financeApi.approveBudgetUsage(id, { approved, notes }),
-      onSuccess: (data) => {
-        queryClient.invalidateQueries({ queryKey: ['finance', 'sub-budget', data.sub_budget_id, 'usages'] });
-        queryClient.invalidateQueries({ queryKey: ['finance', 'budget-usage', data.id] });
-        toast.success(`Budget Usage (ID: ${data.id}) ${data.status?.toLowerCase()}.`);
-      },
-      onError: (error: any) => {
-        toast.error(`Failed to approve/reject budget usage: ${error.message || 'Unknown error'}`);
-      },
-    });
-  };
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, approved, notes }: { id: number; approved: boolean; notes?: string }) =>
+      financeApi.approveBudgetUsage(id, { approved, notes }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['finance', 'sub-budget', data.sub_budget_id, 'usages'] });
+      queryClient.invalidateQueries({ queryKey: ['finance', 'budget-usage', data.id] });
+      toast.success(`Budget Usage (ID: ${data.id}) ${data.status?.toLowerCase()}.`);
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to approve/reject budget usage: ${error.message || 'Unknown error'}`);
+    },
+  });
+};
 
 // Invoice Hooks
 export const useInvoices = (skip = 0, limit = 100) => {
   return useQuery<Invoice[]>({
     queryKey: ['finance', 'invoices', skip, limit],
-    queryFn: () => financeApi.getInvoices(skip, limit),
+    queryFn: async () => {
+      try {
+        return await financeApi.getInvoices(skip, limit);
+      } catch (error) {
+        console.warn("Finance - Failed to fetch invoices, using fallback:", error);
+        return [];
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -339,7 +346,14 @@ export const useDeleteFinancialAccount = () => {
 export const useInfrastructureProfitability = (startDate?: string, endDate?: string) => {
   return useQuery<InfrastructureProfitabilityResponse[]>({
     queryKey: ['finance', 'infrastructure-profitability', startDate, endDate],
-    queryFn: () => financeApi.infrastructureProfitability(startDate, endDate),
+    queryFn: async () => {
+      try {
+        return await financeApi.infrastructureProfitability(startDate, endDate);
+      } catch (error) {
+        console.warn("Finance - Failed to fetch infrastructure profitability, using fallback:", error);
+        return [];
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -386,13 +400,13 @@ export const useMpesaTransaction = (id: number) => {
 };
 
 export const useMpesaTransactionByReceipt = (receiptNumber: string) => {
-    return useQuery<MpesaTransactionOut>({
-      queryKey: ['finance', 'mpesa', 'transaction-by-receipt', receiptNumber],
-      queryFn: () => mpesaApi.getTransactionByReceipt(receiptNumber),
-      staleTime: 5 * 60 * 1000,
-      enabled: !!receiptNumber,
-    });
-  };
+  return useQuery<MpesaTransactionOut>({
+    queryKey: ['finance', 'mpesa', 'transaction-by-receipt', receiptNumber],
+    queryFn: () => mpesaApi.getTransactionByReceipt(receiptNumber),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!receiptNumber,
+  });
+};
 
 export const useRegisterC2BUrls = () => {
   const queryClient = useQueryClient();
@@ -494,7 +508,7 @@ export const useCreateRatiba = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: MpesaRatibaCreate) => mpesaApi.createRatiba(data),
-    onSuccess: (data) => {
+    onSuccess: (data: { name: string; id: number }) => {
       toast.success(`M-Pesa Ratiba "${data.name}" created successfully.`);
     },
     onError: (error: any) => {
@@ -506,7 +520,14 @@ export const useCreateRatiba = () => {
 export const useCheckMpesaBalance = () => {
   return useQuery<any>({
     queryKey: ['finance', 'mpesa', 'balance'],
-    queryFn: () => mpesaApi.checkBalance(),
+    queryFn: async () => {
+      try {
+        return await mpesaApi.checkBalance();
+      } catch (error) {
+        console.warn("M-Pesa - Failed to fetch balance, using fallback:", error);
+        return 0;
+      }
+    },
     staleTime: 60 * 1000,
   });
 };
@@ -514,7 +535,7 @@ export const useCheckMpesaBalance = () => {
 export const useCheckMpesaTransactionStatus = () => {
   return useMutation({
     mutationFn: (data: MpesaTransactionStatusRequest) => mpesaApi.checkTransactionStatus(data),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success(`M-Pesa Transaction ${data.status}: ${data.result_desc}`);
     },
     onError: (error: any) => {

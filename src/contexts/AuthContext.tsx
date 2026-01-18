@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Auth System - Auth Token:", token);
         console.log("Auth System - RBAC Permissions Response:", permissionsData);
 
-        const perms = permissionsData.permissions.map((p) => p.codename);
+        const perms = permissionsData.permissions.map((p: any) => p.name || p.codename);
         console.log("Auth System - Parsed Permissions:", perms);
         setPermissions(perms);
       } catch (permError) {

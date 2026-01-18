@@ -12,7 +12,7 @@ import {
   Plus,
   ArrowRightLeft,
   Banknote,
-  Qrcode,
+  QrCode,
   PhoneCall,
   Mail,
   Users as UsersIcon, // Renamed to avoid conflict
@@ -445,7 +445,7 @@ export default function Mpesa() {
                 <FilePenLine className="h-4 w-4 mr-2" /> Create Ratiba
               </Button>
               <Button variant="outline" size="sm" onClick={() => handleOpenDialog(<GenerateQrForm onSuccess={handleCloseDialog} />, 'Generate Dynamic QR Code', 'Generate a dynamic M-Pesa QR code for payments.')}>
-                <Qrcode className="h-4 w-4 mr-2" /> Generate QR
+                <QrCode className="h-4 w-4 mr-2" /> Generate QR
               </Button>
               <Button variant="outline" size="sm" onClick={() => handleOpenDialog(<ReverseTransactionForm onSuccess={handleCloseDialog} />, 'Reverse Transaction', 'Reverse an M-Pesa transaction.')}>
                 <ArrowRightLeft className="h-4 w-4 mr-2" /> Reverse Transaction

@@ -51,7 +51,14 @@ export const useDeleteLead = () => {
 export const useDeals = (skip = 0, limit = 100) => {
   return useQuery<Deal[]>({
     queryKey: ['crm', 'deals', skip, limit],
-    queryFn: () => crmApi.deals(skip, limit),
+    queryFn: async () => {
+      try {
+        return await crmApi.deals(skip, limit);
+      } catch (error) {
+        console.warn("CRM - Failed to fetch deals, using fallback:", error);
+        return [];
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -103,7 +110,14 @@ export const useDeleteDeal = () => {
 export const useActivities = (skip = 0, limit = 100) => {
   return useQuery<Activity[]>({
     queryKey: ['crm', 'activities', skip, limit],
-    queryFn: () => crmApi.activities(skip, limit),
+    queryFn: async () => {
+      try {
+        return await crmApi.activities(skip, limit);
+      } catch (error) {
+        console.warn("CRM - Failed to fetch activities, using fallback:", error);
+        return [];
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 };
