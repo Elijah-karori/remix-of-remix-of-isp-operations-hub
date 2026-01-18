@@ -46,8 +46,7 @@ export default function Permissions() {
   // Filter logic based on the merged branch's API response structure (myPermissions)
   const filteredPermissions = myPermissions?.permissions?.filter(permission =>
     permission.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    permission.codename?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    permission.description?.toLowerCase().includes(searchTerm.toLowerCase()) // Added description search
+    permission.codename?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const groupedPermissions = filteredPermissions.reduce((acc, perm) => {

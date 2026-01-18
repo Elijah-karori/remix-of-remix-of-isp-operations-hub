@@ -38,11 +38,15 @@ export default function Index() {
     return `KES ${amount.toLocaleString()}`;
   };
 
-  // Calculate changes (mock for now - could come from API comparison)
-  const getActiveProjects = () => projectsOverview?.by_status?.in_progress || 0;
-  const getPendingTasks = () => (taskAllocation?.by_status?.pending || 0) + (taskAllocation?.by_status?.in_progress || 0);
-  const getMonthlyRevenue = () => budgetTracking?.total_budget || 0;
-  const getTotalTechnicians = () => projectsOverview?.total_projects || 0;
+  // Calculate changes - safely access nested properties
+  const overview = projectsOverview as any;
+  const tasks = taskAllocation as any;
+  const budget = budgetTracking as any;
+  
+  const getActiveProjects = () => overview?.by_status?.in_progress || 0;
+  const getPendingTasks = () => (tasks?.by_status?.pending || 0) + (tasks?.by_status?.in_progress || 0);
+  const getMonthlyRevenue = () => budget?.total_budget || 0;
+  const getTotalProjects = () => overview?.total_projects || 0;
 
   return (
     <DashboardLayout 
@@ -71,7 +75,7 @@ export default function Index() {
               value={getActiveProjects()}
               change={12}
               changeLabel="vs last month"
-              icon={<FolderKanban className="w-6 h-6" />}
+              icon={FolderKanban}
               variant="primary"
             />
             <StatCard
@@ -79,7 +83,7 @@ export default function Index() {
               value={getPendingTasks()}
               change={-8}
               changeLabel="vs last week"
-              icon={<CheckSquare className="w-6 h-6" />}
+              icon={CheckSquare}
               variant="warning"
             />
             <StatCard
@@ -87,15 +91,15 @@ export default function Index() {
               value={formatCurrency(getMonthlyRevenue())}
               change={23}
               changeLabel="vs last month"
-              icon={<Wallet className="w-6 h-6" />}
+              icon={Wallet}
               variant="success"
             />
             <StatCard
               title="Total Projects"
-              value={projectsOverview?.total_projects || 0}
+              value={getTotalProjects()}
               change={5}
               changeLabel="vs last month"
-              icon={<Users className="w-6 h-6" />}
+              icon={Users}
               variant="default"
             />
           </>

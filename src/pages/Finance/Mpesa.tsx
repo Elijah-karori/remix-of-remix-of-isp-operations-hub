@@ -65,7 +65,7 @@ function C2BSimulateForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const simulateMutation = useSimulateC2B();
   const onSubmit = async (values: C2BSimulateValues) => {
-    await simulateMutation.mutateAsync(values);
+    await simulateMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (
@@ -96,7 +96,7 @@ function STKPushForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const stkPushMutation = useStkPush();
   const onSubmit = async (values: STKPushValues) => {
-    await stkPushMutation.mutateAsync(values);
+    await stkPushMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (
@@ -128,7 +128,7 @@ function B2CPayForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const b2cPayMutation = useB2CPay();
   const onSubmit = async (values: B2CPayValues) => {
-    await b2cPayMutation.mutateAsync(values);
+    await b2cPayMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (
@@ -159,7 +159,7 @@ function B2BPayForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const b2bPayMutation = useB2BPay();
   const onSubmit = async (values: B2BPayValues) => {
-    await b2bPayMutation.mutateAsync(values);
+    await b2bPayMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (
@@ -188,7 +188,7 @@ function RemitTaxForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const remitTaxMutation = useRemitTax();
   const onSubmit = async (values: RemitTaxValues) => {
-    await remitTaxMutation.mutateAsync(values);
+    await remitTaxMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (
@@ -220,7 +220,7 @@ function CreateRatibaForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const createRatibaMutation = useCreateRatiba();
   const onSubmit = async (values: CreateRatibaValues) => {
-    await createRatibaMutation.mutateAsync(values);
+    await createRatibaMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (
@@ -254,7 +254,7 @@ function GenerateQrForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const generateQrMutation = useGenerateDynamicQR();
   const onSubmit = async (values: GenerateQrValues) => {
-    await generateQrMutation.mutateAsync(values);
+    await generateQrMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (
@@ -286,7 +286,7 @@ function ReverseTransactionForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const reverseTxnMutation = useReverseMpesaTransaction();
   const onSubmit = async (values: ReverseTxnValues) => {
-    await reverseTxnMutation.mutateAsync(values);
+    await reverseTxnMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (
@@ -315,7 +315,7 @@ function CheckTransactionStatusForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const checkTxnStatusMutation = useCheckMpesaTransactionStatus();
   const onSubmit = async (values: CheckTxnStatusValues) => {
-    await checkTxnStatusMutation.mutateAsync(values);
+    await checkTxnStatusMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (

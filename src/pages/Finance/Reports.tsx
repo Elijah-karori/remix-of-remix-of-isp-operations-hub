@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { RefreshCw, FileText, Download, Calendar as CalendarIcon, LineChart } from 'lucide-react';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { ErrorState } from '@/components/ui/error-state';
@@ -265,13 +267,13 @@ export default function Reports() {
               <CardTitle>Infrastructure Profitability</CardTitle>
               <CardDescription>Profitability by infrastructure type over the selected period.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={refetchInfraProfit}>
+            <Button variant="outline" size="sm" onClick={() => refetchInfraProfit()}>
               <RefreshCw className="h-4 w-4 mr-2" /> Refresh
             </Button>
           </CardHeader>
           <CardContent>
             {isLoadingInfraProfit ? (
-              <LoadingSkeleton variant="inline" count={3} />
+              <LoadingSkeleton variant="card" count={3} />
             ) : infrastructureProfitability && infrastructureProfitability.length > 0 ? (
               <div className="space-y-4">
                 {infrastructureProfitability.map((item, index) => (
@@ -323,16 +325,16 @@ export default function Reports() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" onClick={refetchMonthlyProfit}>
+              <Button variant="outline" size="sm" onClick={() => refetchMonthlyProfit()}>
                 <RefreshCw className="h-4 w-4 mr-2" /> Refresh
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {isLoadingMonthlyProfit ? (
-              <LoadingSkeleton variant="inline" count={1} />
+              <LoadingSkeleton variant="stat" count={1} />
             ) : monthlyProfitError ? (
-              <ErrorState message="Failed to load monthly profit" onRetry={refetchMonthlyProfit} />
+              <ErrorState message="Failed to load monthly profit" onRetry={() => refetchMonthlyProfit()} />
             ) : monthlyProfit !== undefined ? (
               <p className="text-3xl font-bold">KES {monthlyProfit?.toLocaleString() ?? '0'}</p>
             ) : (

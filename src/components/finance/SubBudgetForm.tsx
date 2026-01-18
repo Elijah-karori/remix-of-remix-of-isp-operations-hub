@@ -45,7 +45,11 @@ export function SubBudgetForm({ masterBudgetId, initialData, onSuccess, onCancel
 
   const form = useForm<SubBudgetFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      name: initialData.name,
+      amount: typeof initialData.amount === 'string' ? parseFloat(initialData.amount) : initialData.amount,
+      financial_account_id: initialData.financial_account_id || undefined,
+    } : {
       name: '',
       amount: 0,
       financial_account_id: undefined,

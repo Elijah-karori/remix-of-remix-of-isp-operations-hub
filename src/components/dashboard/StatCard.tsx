@@ -7,7 +7,7 @@ interface StatCardProps {
   value: string | number;
   change?: number | string;
   changeLabel?: string;
-  icon: React.ElementType;
+  icon: React.ElementType | ReactNode;
   variant?: "default" | "primary" | "success" | "warning" | "destructive" | "blue" | "green" | "orange" | "red" | "purple";
   className?: string;
   style?: React.CSSProperties;
@@ -80,7 +80,7 @@ export function StatCard({
           )}
         </div>
         <div className={cn("p-3 rounded-xl", iconStyles[variant as keyof typeof iconStyles])}>
-          <Icon className="w-5 h-5" />
+          {typeof Icon === 'function' ? <Icon className="w-5 h-5" /> : Icon}
         </div>
       </div>
     </div>
