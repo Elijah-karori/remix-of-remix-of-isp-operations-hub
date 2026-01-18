@@ -47,14 +47,13 @@ export default function AuditLogs() {
       const params: any = { skip: page * limit, limit };
       if (actionFilter && actionFilter !== 'all') params.action = actionFilter;
       if (resourceFilter && resourceFilter !== 'all') params.resource = resourceFilter;
-      if (searchTerm) params.searchTerm = searchTerm; // Add searchTerm to API params
+      if (searchTerm) params.searchTerm = searchTerm;
       if (dateRange?.from) params.startDate = dateRange.from.toISOString();
       if (dateRange?.to) params.endDate = dateRange.to.toISOString();
 
       return auditApi.logs(params) as Promise<AuditLog[]>;
     },
     staleTime: 30000,
-    keepPreviousData: true, // Keep previous data while fetching new data
   });
 
   const { data: stats } = useQuery<any>({
@@ -90,9 +89,9 @@ export default function AuditLogs() {
     }
   };
 
-  // Filter logs for display if the API doesn't do all filtering server-side
-  // If the API call above handles all filtering, this can be simplified to just `logs || []`
-  const displayedLogs = logs?.filter(log => {
+  // Filter logs for display
+  const logsArray = Array.isArray(logs) ? logs : [];
+  const displayedLogs = logsArray.filter(log => {
     const matchesSearch = 
       log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.resource?.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -75,8 +75,9 @@ export default function ProcurementTab() {
   };
 
   const handleExport = (format: string) => {
-    if (orders && orders.length > 0) {
-      exportToExcel(orders, "purchase-orders", "Purchase Orders");
+    const ordersList = orders as any[] | undefined;
+    if (ordersList && ordersList.length > 0) {
+      exportToExcel(ordersList, "purchase-orders", "Purchase Orders");
       toast.success("Purchase orders exported successfully!");
     } else {
       toast.error("No purchase orders to export.");
@@ -87,7 +88,9 @@ export default function ProcurementTab() {
     toast.info("Refreshing orders...");
     refetch();
   };
-  const filteredOrders = orders?.filter(
+  
+  const ordersList = orders as any[] | undefined;
+  const filteredOrders = ordersList?.filter(
     (order: any) =>
       order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.supplier_name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -168,7 +171,7 @@ export default function ProcurementTab() {
                     <TableCell>
                       <Badge variant={
                         order.status === "approved" ? "default" :
-                        order.status === "pending" ? "warning" :
+                        order.status === "pending" ? "secondary" :
                         "destructive"
                       }>
                         {order.status}

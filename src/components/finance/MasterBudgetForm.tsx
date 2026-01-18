@@ -36,7 +36,12 @@ export function MasterBudgetForm({ initialData, onSuccess, onCancel }: MasterBud
 
   const form = useForm<MasterBudgetFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      name: initialData.name,
+      start_date: initialData.start_date,
+      end_date: initialData.end_date,
+      total_amount: typeof initialData.total_amount === 'string' ? parseFloat(initialData.total_amount) : initialData.total_amount,
+    } : {
       name: '',
       start_date: '',
       end_date: '',

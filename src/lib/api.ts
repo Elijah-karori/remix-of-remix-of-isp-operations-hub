@@ -277,6 +277,26 @@ export const authApi = {
     });
   },
 
+  // Password reset (request OTP for password reset)
+  requestPasswordReset: async (email: string) => {
+    return apiFetch(`/api/v1/auth/passwordless/request?email=${encodeURIComponent(email)}`, {
+      method: "POST",
+    });
+  },
+
+  // Reset password with OTP
+  resetPassword: async (email: string, otp: string, newPassword: string) => {
+    return apiFetch("/api/v1/auth/set-password", {
+      method: "POST",
+      body: JSON.stringify({ 
+        email,
+        otp,
+        new_password: newPassword, 
+        confirm_password: newPassword 
+      }),
+    });
+  },
+
   logout: () => setAccessToken(null),
 };
 

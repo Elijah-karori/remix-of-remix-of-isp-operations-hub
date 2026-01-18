@@ -107,7 +107,7 @@ export default function Invoices() {
         item.description,
         item.quantity,
         `KES ${item.unit_price.toLocaleString()}`,
-        `KES ${item.quantity * item.unit_price.toLocaleString()}` // Changed to calculate total correctly
+        `KES ${(item.quantity * item.unit_price).toLocaleString()}`
       ]),
       foot: [['', '', 'Total Amount', `KES ${invoice.total_amount.toLocaleString()}`]],
       theme: 'grid',

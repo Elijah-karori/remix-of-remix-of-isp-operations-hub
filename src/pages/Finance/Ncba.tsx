@@ -30,7 +30,7 @@ function NcbaPayForm({ onSuccess }: { onSuccess: () => void }) {
   });
   const ncbaPayMutation = useNcbaPay();
   const onSubmit = async (values: NcbaPayValues) => {
-    await ncbaPayMutation.mutateAsync(values);
+    await ncbaPayMutation.mutateAsync(values as any);
     onSuccess();
   };
   return (

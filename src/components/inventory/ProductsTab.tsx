@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useProducts, useCreateProduct, useUpdateProduct, useSuppliers, Product } from "@/hooks/use-inventory";
+import { ProductCreate } from "@/types/api";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,12 +75,25 @@ export function ProductsTab() {
         await updateProductMutation.mutateAsync({ id: currentProduct.id, data: currentProduct });
         toast.success("Product updated successfully!");
       } else {
-        await createProductMutation.mutateAsync(currentProduct);
+        // Create ProductCreate payload
+        const createPayload: ProductCreate = {
+          name: currentProduct.name,
+          sku: currentProduct.sku,
+          description: currentProduct.description,
+          category: currentProduct.category,
+          price: currentProduct.unit_price || 0,
+          cost_price: currentProduct.cost_price,
+          quantity_on_hand: currentProduct.quantity_in_stock || 0,
+          reorder_level: currentProduct.reorder_level,
+          supplier_id: currentProduct.supplier_id,
+          specifications: currentProduct.specifications,
+        };
+        await createProductMutation.mutateAsync(createPayload);
         toast.success("Product added successfully!");
       }
       setIsAddProductDialogOpen(false);
       refetch();
-    } catch (err) {
+    } catch (err: any) {
       toast.error(`Failed to save product: ${err.message || 'Unknown error'}`);
     }
   };

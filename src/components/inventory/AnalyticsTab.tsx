@@ -41,7 +41,7 @@ export default function AnalyticsTab() {
           </CardHeader>
           <CardContent>
             {valuationLoading ? (
-              <LoadingSkeleton variant="text" className="h-8 w-3/4" />
+              <LoadingSkeleton variant="stat" count={1} />
             ) : valuationError ? (
               <ErrorState message="Failed to load valuation" onRetry={refetchValuation} />
             ) : (
@@ -62,7 +62,7 @@ export default function AnalyticsTab() {
           </CardHeader>
           <CardContent>
             {turnoverLoading ? (
-              <LoadingSkeleton variant="text" className="h-8 w-3/4" />
+              <LoadingSkeleton variant="stat" count={1} />
             ) : turnoverError ? (
               <ErrorState message="Failed to load turnover" onRetry={refetchTurnover} />
             ) : (
@@ -83,7 +83,7 @@ export default function AnalyticsTab() {
           </CardHeader>
           <CardContent>
             {deadStockLoading ? (
-              <LoadingSkeleton variant="text" className="h-8 w-3/4" />
+              <LoadingSkeleton variant="stat" count={1} />
             ) : deadStockError ? (
               <ErrorState message="Failed to load dead stock" onRetry={refetchDeadStock} />
             ) : (
