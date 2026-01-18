@@ -113,6 +113,7 @@ import { FinancialAccountForm } from "@/components/finance/FinancialAccountForm"
 import { MasterBudgetForm } from "@/components/finance/MasterBudgetForm";
 import { SubBudgetForm } from "@/components/finance/SubBudgetForm";
 import { BudgetUsageForm } from "@/components/finance/BudgetUsageForm";
+import { LoadingSpinner } from "@/components/ui/loading-spinner"; // Added missing import for LoadingSpinner
 import { FinancialAccount, MasterBudget, SubBudget, BudgetUsage, ProjectOut, BOMVarianceOut } from "@/types/api";
 import { Trash2, Edit } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -1675,8 +1676,31 @@ export default function Finance() {
               <Zap className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>Budget Tools Placeholder</div>
-            </CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="templateProjectName">Project Name for Template</Label>
+                <Input
+                  id="templateProjectName"
+                  value={projectNameForTemplate}
+                  onChange={(e) => setProjectNameForTemplate(e.target.value)}
+                  placeholder="e.g., New Fiber Rollout"
+                />
+                <Button onClick={() => downloadTemplate(projectNameForTemplate || undefined)} disabled={downloadingTemplate} className="w-full">
+                  {downloadingTemplate ? "Downloading..." : "Download Budget Template"}
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="budgetUploadInput">Upload Budget File (.xlsx)</Label>
+                <Input
+                  id="budgetUploadInput"
+                  type="file"
+                  accept=".xlsx"
+                  onChange={handleBudgetFileUpload}
+                />
+                <Button onClick={handleUploadBudget} disabled={uploadBudgetMutation.isPending || !budgetUploadFile} className="w-full">
+                  {uploadBudgetMutation.isPending ? "Uploading..." : "Upload Budget"}
+                </Button></div>
+              </CardContent>
           </Card>
 
         </TabsContent>

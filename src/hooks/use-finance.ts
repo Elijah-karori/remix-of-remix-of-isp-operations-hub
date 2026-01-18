@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { financeApi, mpesaApi, ncbaApi } from '@/lib/api'; // Added mpesaApi, ncbaApi
 import {
@@ -761,28 +762,12 @@ export const useDownloadBudgetTemplate = () => {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<any>(null);
 
-  const downloadTemplate = async (projectName = "New Project") => {
+  const downloadTemplate = async (projectName?: string) => {
     setDownloading(true);
     setError(null);
     try {
-      const response = await financeApi.downloadBudgetTemplate(projectName);
-      // Assuming response is a blob or has a download_url
-      if (response.download_url) {
-        window.open(response.download_url, '_blank');
-        toast.success("Budget template download started.");
-      } else {
-        // Handle direct file download if API returns a blob directly
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${projectName || 'budget_template'}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        toast.success("Budget template downloaded successfully.");
-      }
+      const response = await financeApi.downloadBudgetTemplate(projectName); // API call directly handles download
+      toast.success(response.message || "Budget template download initiated.");
     } catch (err: any) {
       setError(err);
       toast.error(`Failed to download budget template: ${err.message || 'Unknown error'}`);

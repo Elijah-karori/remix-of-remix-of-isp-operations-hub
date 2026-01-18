@@ -668,8 +668,47 @@ export const financeApi = {
     apiFetch<FinancialSnapshotResponse>("/api/v1/finance/snapshot"),
 
   // Budget Template
-  downloadBudgetTemplate: (projectName = "New Project") =>
-    apiFetch(`/api/v1/finance/budget-template?project_name=${encodeURIComponent(projectName)}`),
+  downloadBudgetTemplate: async (projectName = "New Project") => {
+    const headers: HeadersInit = {};
+    if (accessToken) {
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${accessToken}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/finance/budget-template?project_name=${encodeURIComponent(projectName)}`, {
+      method: "GET",
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      // Handle non-OK responses as before
+      const error = await response.json().catch(() => ({ detail: "An error occurred during template download" }));
+      throw new Error(error.detail || `HTTP ${response.status}`);
+    }
+
+    // Directly handle the file download
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = `${projectName || 'budget_template'}.xlsx`;
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    // Return a success message or similar, as this is no longer a JSON response
+    return { message: "Budget template download initiated." };
+  },
 
   uploadBudget: async (file: File) => {
     const formData = new FormData();
