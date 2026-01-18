@@ -1675,31 +1675,8 @@ export default function Finance() {
               <Zap className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="templateProjectName">Project Name for Template</Label>
-                <Input
-                  id="templateProjectName"
-                  value={projectNameForTemplate}
-                  onChange={(e) => setProjectNameForTemplate(e.target.value)}
-                  placeholder="e.g., New Fiber Rollout"
-                />
-                <Button onClick={() => downloadTemplate(projectNameForTemplate || undefined)} disabled={downloadingTemplate} className="w-full">
-                  {downloadingTemplate ? "Downloading..." : "Download Budget Template"}
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="budgetUploadInput">Upload Budget File (.xlsx)</Label>
-                <Input
-                  id="budgetUploadInput"
-                  type="file"
-                  accept=".xlsx"
-                  onChange={handleBudgetFileUpload}
-                />
-                <Button onClick={handleUploadBudget} disabled={uploadBudgetMutation.isPending || !budgetUploadFile} className="w-full">
-                  {uploadBudgetMutation.isPending ? "Uploading..." : "Upload Budget"}
-                </Button>
-              </CardContent>
+              <div>Budget Tools Placeholder</div>
+            </CardContent>
           </Card>
 
         </TabsContent>
