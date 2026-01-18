@@ -14,66 +14,20 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-
-// Placeholder type for campaign performance since the API returns Record<string, any>
-interface CampaignPerformance {
-  campaign_id: number;
-  name: string;
-  total_spend: number;
-  impressions: number;
-  clicks: number;
-  conversions: number;
-  // Add other relevant fields from marketingApi.getCampaignPerformance as needed
-}
+import { useCampaigns, useCreateCampaign } from '@/hooks/use-marketing'; // Use new hooks
+import { CampaignPerformanceDialog } from '@/components/marketing/CampaignPerformanceDialog'; // Import dialog
 
 const Marketing: React.FC = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient(); // Still need queryClient for invalidation
   const [isCreateCampaignDialogOpen, setIsCreateCampaignDialogOpen] = useState(false);
   const [newCampaignName, setNewCampaignName] = useState('');
   const [newCampaignDescription, setNewCampaignDescription] = useState('');
+  const [isViewPerformanceDialogOpen, setIsViewPerformanceDialogOpen] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
 
-  // Fetch campaigns
-  // The documentation only provides getCampaignPerformance, so we'll use that to list campaigns
-  // Assuming getCampaignPerformance can return a list of campaigns or an object containing them.
-  // For simplicity, we'll call it for a generic ID (e.g., 1) and assume it lists all, or mock it for now.
-  // A better API design would have a separate 'list campaigns' endpoint.
-  // For the purpose of this implementation, let's assume getCampaignPerformance(0) returns all campaigns,
-  // or we need to simulate a list. Given the API, it's more likely `getCampaignPerformance` is for a single campaign.
-  // Since there is no explicit `marketingApi.listCampaigns` or similar, I will simulate campaigns.
-  // If the backend API for `getCampaignPerformance` actually returns a list for a given `campaignId=0` or similar,
-  // that would be the way to go. Otherwise, this is a missing feature in the API itself for listing.
-  // For now, I will use a placeholder for listing until clarification or a suitable API endpoint is found.
-
-  // Let's create a dummy list for display purposes initially
-  const { data: campaigns, isLoading, error } = useQuery<CampaignPerformance[], Error>({
-    queryKey: ['campaigns'],
-    queryFn: async () => {
-      // In a real app, this would be an actual API call to list campaigns
-      // Since marketingApi.getCampaignPerformance is for a single campaign,
-      // and marketingApi.createCampaign doesn't return the full list, we simulate for now.
-      return [
-        { campaign_id: 1, name: 'Summer Sale 2024', total_spend: 1500, impressions: 10000, clicks: 500, conversions: 50 },
-        { campaign_id: 2, name: 'New Product Launch', total_spend: 2500, impressions: 15000, clicks: 800, conversions: 80 },
-      ];
-    },
-    staleTime: Infinity, // Dummy data, won't change
-  });
-
-
-  // Create campaign mutation
-  const createCampaignMutation = useMutation({
-    mutationFn: (data: { name: string; description: string }) => marketingApi.createCampaign(data),
-    onSuccess: () => {
-      toast.success('Campaign created successfully!');
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] }); // Invalidate to refetch campaigns
-      setIsCreateCampaignDialogOpen(false);
-      setNewCampaignName('');
-      setNewCampaignDescription('');
-    },
-    onError: (err: Error) => {
-      toast.error(`Failed to create campaign: ${err.message}`);
-    },
-  });
+  // Use the new useCampaigns hook for listing
+  const { data: campaigns, isLoading, error } = useCampaigns();
+  const createCampaignMutation = useCreateCampaign(); // Use the new create campaign hook
 
   const handleCreateCampaignSubmit = () => {
     if (!newCampaignName) {
@@ -81,6 +35,11 @@ const Marketing: React.FC = () => {
       return;
     }
     createCampaignMutation.mutate({ name: newCampaignName, description: newCampaignDescription });
+  };
+
+  const handleViewPerformance = (campaignId: number) => {
+    setSelectedCampaignId(campaignId);
+    setIsViewPerformanceDialogOpen(true);
   };
 
   if (isLoading) {
@@ -120,23 +79,21 @@ const Marketing: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Campaign Name</TableHead>
-                  <TableHead>Total Spend</TableHead>
-                  <TableHead>Impressions</TableHead>
-                  <TableHead>Clicks</TableHead>
-                  <TableHead>Conversions</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Budget</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {campaigns.map((campaign) => (
-                  <TableRow key={campaign.campaign_id}>
+                  <TableRow key={campaign.id}>
                     <TableCell className="font-medium">{campaign.name}</TableCell>
-                    <TableCell>{campaign.total_spend.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
-                    <TableCell>{campaign.impressions.toLocaleString()}</TableCell>
-                    <TableCell>{campaign.clicks.toLocaleString()}</TableCell>
-                    <TableCell>{campaign.conversions.toLocaleString()}</TableCell>
+                    <TableCell>{campaign.description || 'N/A'}</TableCell>
+                    <TableCell>{campaign.status || 'N/A'}</TableCell>
+                    <TableCell>{campaign.budget?.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) || 'N/A'}</TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">View Performance</Button>
+                      <Button variant="outline" size="sm" onClick={() => handleViewPerformance(campaign.id)}>View Performance</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -200,6 +157,13 @@ const Marketing: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Campaign Performance Dialog */}
+      <CampaignPerformanceDialog
+        campaignId={selectedCampaignId}
+        isOpen={isViewPerformanceDialogOpen}
+        onClose={() => setIsViewPerformanceDialogOpen(false)}
+      />
     </DashboardLayout>
   );
 };

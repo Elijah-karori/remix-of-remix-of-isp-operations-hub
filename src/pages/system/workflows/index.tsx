@@ -15,16 +15,18 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge'; // From merged branch
-import { Input } from '@/components/ui/input'; // From merged branch
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // From merged branch
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // From merged branch
-import { Plus, Play, Clock, CheckCircle2, XCircle, Loader2, RefreshCw, GitBranch } from 'lucide-react'; // Combined icons
-import { workflowApi } from '@/lib/api'; // From merged branch
-import { WorkflowDefinitionRead, WorkflowInstanceRead } from '@/types/api'; // From merged branch
-import { DashboardLayout } from '@/components/layout/DashboardLayout'; // From merged branch
-import { toast } from 'sonner'; // Keeping sonner toast as it's consistently used elsewhere in the project
-import { format } from 'date-fns'; // From merged branch
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Play, Clock, CheckCircle2, XCircle, Loader2, RefreshCw, GitBranch } from 'lucide-react';
+import { workflowApi } from '@/lib/api';
+import { WorkflowDefinitionRead, WorkflowInstanceRead } from '@/types/api';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 // nodeTypes can be extended for custom nodes if needed, but for now, it's empty as in HEAD
 const nodeTypes = {};
@@ -34,6 +36,11 @@ export default function Workflows() {
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinitionRead | null>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
+  const [activeTab, setActiveTab] = useState("definitions"); // State to control active tab
+
+  const [isViewInstanceDialogOpen, setIsViewInstanceDialogOpen] = useState(false);
+  const [viewingInstance, setViewingInstance] = useState<WorkflowInstanceRead | null>(null);
+
 
   const { data: workflows, isLoading: loadingWorkflows, refetch: refetchWorkflows } = useQuery<WorkflowDefinitionRead[]>({
     queryKey: ['workflows'],
@@ -56,28 +63,29 @@ export default function Workflows() {
   const approveMutation = useMutation({
     mutationFn: ({ id, comment }: { id: number; comment?: string }) => workflowApi.approve(id, comment),
     onSuccess: () => {
-      toast.success('Workflow instance approved successfully'); // Using sonner toast
+      toast.success('Workflow instance approved successfully');
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
     },
     onError: (err: Error) => {
-      toast.error(err.message); // Using sonner toast
+      toast.error(err.message);
     },
   });
 
   const rejectMutation = useMutation({
     mutationFn: ({ id, comment }: { id: number; comment?: string }) => workflowApi.reject(id, comment),
     onSuccess: () => {
-      toast.success('Workflow instance rejected'); // Using sonner toast
+      toast.success('Workflow instance rejected');
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
     },
     onError: (err: Error) => {
-      toast.error(err.message); // Using sonner toast
+      toast.error(err.message);
     },
   });
 
   // Convert workflow steps to ReactFlow nodes/edges
   const loadWorkflowToEditor = (workflow: WorkflowDefinitionRead) => {
     setSelectedWorkflow(workflow);
+    setActiveTab("designer"); // Switch to designer tab
 
     // Clear existing nodes and edges
     setNodes([]);
@@ -122,15 +130,15 @@ export default function Workflows() {
     []
   );
 
-  const addNode = (type: 'default' | 'approval' = 'default') => { // Combined addNode logic
+  const addNode = (type: 'default' | 'approval' = 'default') => {
     const newNode: Node = {
-      id: `node-${Date.now()}`, // Unique ID from merged branch
-      data: { label: type === 'approval' ? `Approval ${nodes.length + 1}` : `Step ${nodes.length + 1}` }, // Label from HEAD
+      id: `node-${Date.now()}`,
+      data: { label: type === 'approval' ? `Approval ${nodes.length + 1}` : `Step ${nodes.length + 1}` },
       position: {
-        x: Math.random() * 250, // Random position for new nodes
+        x: Math.random() * 250,
         y: Math.random() * 250,
       },
-      style: type === 'approval' ? { backgroundColor: '#fde047', color: '#1e293b' } : undefined, // Style from HEAD
+      style: type === 'approval' ? { backgroundColor: '#fde047', color: '#1e293b' } : undefined,
     };
     setNodes((nds) => [...nds, newNode]);
   };
@@ -143,7 +151,6 @@ export default function Workflows() {
 
     toast.info("Saving workflow...");
 
-    // Map ReactFlow nodes/edges to API format
     const steps = nodes.map(node => {
       const nextSteps = edges
         .filter(edge => edge.source === node.id)
@@ -161,19 +168,22 @@ export default function Workflows() {
       if (selectedWorkflow) {
         await workflowApi.updateGraph(selectedWorkflow.id, {
           name: selectedWorkflow.name,
-          description: selectedWorkflow.description,
+          description: selectedWorkflow.description || '',
           trigger_type: selectedWorkflow.trigger_type,
           steps,
         });
         toast.success("Workflow saved successfully");
       } else {
-        // Handle new workflow creation
         const name = prompt("Enter workflow name:");
         if (!name) return;
 
+        const description = prompt("Enter workflow description (optional):") || '';
+        const triggerType = prompt("Enter trigger type (e.g., 'manual', 'event'):") || 'manual';
+
         const newWorkflow = await workflowApi.createGraph({
           name,
-          trigger_type: 'manual', // Default
+          description,
+          trigger_type: triggerType,
           steps,
         });
         setSelectedWorkflow(newWorkflow);
@@ -214,11 +224,24 @@ export default function Workflows() {
     }
   };
 
+  const handleNewWorkflowClick = () => {
+    setSelectedWorkflow(null); // Clear selected workflow
+    setNodes([]); // Clear nodes
+    setEdges([]); // Clear edges
+    setActiveTab("designer"); // Switch to designer tab
+  };
+
+  const handleViewInstanceDetails = (instance: WorkflowInstanceRead) => {
+    setViewingInstance(instance);
+    setIsViewInstanceDialogOpen(true);
+  };
+
+
   const isLoading = loadingWorkflows || loadingApprovals;
 
   return (
     <DashboardLayout title="Workflows" subtitle="Design and manage approval workflows">
-      <Tabs defaultValue="definitions" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="definitions" className="flex items-center gap-2">
             <GitBranch className="h-4 w-4" />
@@ -250,7 +273,7 @@ export default function Workflows() {
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Refresh
                   </Button>
-                  <Button size="sm">
+                  <Button size="sm" onClick={handleNewWorkflowClick}> {/* Added onClick */}
                     <Plus className="h-4 w-4 mr-2" />
                     New Workflow
                   </Button>
@@ -358,6 +381,13 @@ export default function Workflows() {
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewInstanceDetails(instance)}
+                            >
+                                View Details
+                            </Button>
+                            <Button
                               size="sm"
                               variant="default"
                               onClick={() => approveMutation.mutate({ id: instance.id })}
@@ -440,6 +470,62 @@ export default function Workflows() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* View Workflow Instance Details Dialog */}
+      <Dialog open={isViewInstanceDialogOpen} onOpenChange={setIsViewInstanceDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Workflow Instance Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the selected workflow instance.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingInstance && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2">
+                <Label className="text-muted-foreground">Instance ID:</Label>
+                <p className="font-medium">{viewingInstance.id}</p>
+
+                <Label className="text-muted-foreground">Workflow Name:</Label>
+                <p>{viewingInstance.workflow?.name || `Workflow #${viewingInstance.workflow_id}`}</p>
+
+                <Label className="text-muted-foreground">Status:</Label>
+                <p>{getStatusBadge(viewingInstance.status)}</p>
+
+                <Label className="text-muted-foreground">Current Step:</Label>
+                <p>{viewingInstance.current_step_id || 'N/A'}</p>
+
+                <Label className="text-muted-foreground">Initiated By:</Label>
+                <p>{viewingInstance.initiated_by_user?.full_name || 'N/A'}</p>
+
+                <Label className="text-muted-foreground">Related Model:</Label>
+                <p>{viewingInstance.related_model} (ID: {viewingInstance.related_id})</p>
+
+                <Label className="text-muted-foreground">Created At:</Label>
+                <p>{format(new Date(viewingInstance.created_at), 'MMM d, yyyy HH:mm')}</p>
+
+                {viewingInstance.updated_at && (
+                  <>
+                    <Label className="text-muted-foreground">Last Updated:</Label>
+                    <p>{format(new Date(viewingInstance.updated_at), 'MMM d, yyyy HH:mm')}</p>
+                  </>
+                )}
+
+                {viewingInstance.completed_at && (
+                  <>
+                    <Label className="text-muted-foreground">Completed At:</Label>
+                    <p>{format(new Date(viewingInstance.completed_at), 'MMM d, yyyy HH:mm')}</p>
+                  </>
+                )}
+                {/* Render more instance details as needed */}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewInstanceDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

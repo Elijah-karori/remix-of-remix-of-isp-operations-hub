@@ -1227,8 +1227,22 @@ export const crmApi = {
 };
 
 // Marketing endpoints
+export interface CampaignOut {
+  id: number;
+  name: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  status?: string;
+  budget?: number;
+  // Add other relevant fields for a campaign list item
+}
+
 export const marketingApi = {
   // Campaigns
+  listCampaigns: (): Promise<CampaignOut[]> =>
+    apiFetch<CampaignOut[]>("/api/v1/marketing/campaigns"),
+
   createCampaign: (data: any) =>
     apiFetch("/api/v1/marketing/campaigns", {
       method: "POST",

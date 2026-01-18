@@ -8,32 +8,78 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
+import { useCreateTask } from '@/hooks/use-tasks'; // Import the new hook
+import { TaskCreate } from '@/types/api'; // Import TaskCreate type
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useProjects } from '@/hooks/use-projects'; // To get list of projects
+import { useUsers } from '@/hooks/use-users'; // Assuming this hook exists or will be created
+
 
 const taskFormSchema = z.object({
   title: z.string().min(2, { message: 'Task title must be at least 2 characters.' }),
   description: z.string().optional(),
-  // Add other task fields as needed from TaskCreate type
+  project_id: z.coerce.number().int().optional().refine(val => val === undefined || val > 0, {
+    message: "Project is required.",
+  }),
+  assigned_to_user_id: z.coerce.number().int().optional().refine(val => val === undefined || val > 0, {
+    message: "Assignee is required.",
+  }),
+  due_date: z.date().optional(),
+  status: z.enum(["todo", "in_progress", "done", "blocked"], {
+    required_error: "Status is required.",
+  }).default("todo"),
+  priority: z.enum(["low", "medium", "high", "urgent"], {
+    required_error: "Priority is required.",
+  }).default("medium"),
 });
 
 interface TaskFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  initialData?: Partial<TaskCreate>; // For editing purposes if needed later
 }
 
-export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel }) => {
+export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel, initialData }) => {
+  const createTaskMutation = useCreateTask();
+  const { data: projectsData, isLoading: loadingProjects } = useProjects(); // Fetch projects
+  const { data: usersData, isLoading: loadingUsers } = useUsers(); // Fetch users
+
   const form = useForm<z.infer<typeof taskFormSchema>>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
-      title: '',
-      description: '',
+      title: initialData?.title || '',
+      description: initialData?.description || '',
+      project_id: initialData?.project_id || undefined,
+      assigned_to_user_id: initialData?.assigned_to_user_id || undefined,
+      due_date: initialData?.due_date ? new Date(initialData.due_date) : undefined,
+      status: initialData?.status || "todo",
+      priority: initialData?.priority || "medium",
     },
   });
 
-  const onSubmit = (values: z.infer<typeof taskFormSchema>) => {
-    console.log('Task form submitted:', values);
-    // Here you would integrate with tasksApi.create
-    toast.success('Task created successfully (simulated)!');
-    onSuccess?.();
+  const onSubmit = async (values: z.infer<typeof taskFormSchema>) => {
+    try {
+      const taskData: TaskCreate = {
+        title: values.title,
+        description: values.description,
+        project_id: values.project_id,
+        assigned_to_user_id: values.assigned_to_user_id,
+        due_date: values.due_date ? format(values.due_date, 'yyyy-MM-dd') : undefined,
+        status: values.status,
+        priority: values.priority,
+      };
+      await createTaskMutation.mutateAsync(taskData);
+      toast.success('Task created successfully!');
+      onSuccess?.();
+    } catch (err: any) {
+      toast.error(`Failed to create task: ${err.message || 'Unknown error'}`);
+    }
   };
 
   return (
@@ -65,12 +111,155 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel }) => {
             </FormItem>
           )}
         />
-        {/* Add more fields here */}
+        <FormField
+          control={form.control}
+          name="project_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Project</FormLabel>
+              <Select onValueChange={value => field.onChange(parseInt(value))} value={field.value ? String(field.value) : ""}>
+                <FormControl>
+                  <SelectTrigger disabled={loadingProjects}>
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {loadingProjects ? (
+                    <SelectItem value="loading" disabled>Loading projects...</SelectItem>
+                  ) : (
+                    projectsData?.map((project) => (
+                      <SelectItem key={project.id} value={String(project.id)}>
+                        {project.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="assigned_to_user_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Assigned To</FormLabel>
+              <Select onValueChange={value => field.onChange(parseInt(value))} value={field.value ? String(field.value) : ""}>
+                <FormControl>
+                  <SelectTrigger disabled={loadingUsers}>
+                    <SelectValue placeholder="Select an assignee" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {loadingUsers ? (
+                    <SelectItem value="loading" disabled>Loading users...</SelectItem>
+                  ) : (
+                    usersData?.users.map((user) => (
+                      <SelectItem key={user.id} value={String(user.id)}>
+                        {user.full_name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="due_date"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Due Date (Optional)</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) => date < new Date("1900-01-01")}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="todo">To Do</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="done">Done</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="priority"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Priority</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit">Create Task</Button>
+          <Button type="submit" disabled={createTaskMutation.isPending}>
+            {createTaskMutation.isPending && <LoadingSpinner className="mr-2" />}
+            Create Task
+          </Button>
         </div>
       </form>
     </Form>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useProducts, useCreateProduct, useUpdateProduct, useSuppliers, Product } from "@/hooks/use-inventory";
+import { useState, useEffect } from "react";
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, Product } from "@/hooks/use-inventory"; // Import useDeleteProduct
 import { ProductCreate } from "@/types/api";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StockAlertDialog } from "./StockAlertDialog";
+import { StockAlertDialog } from "./StockAlertDialog"; // Assuming this is for Bell icon
 import { Plus, Search, Bell, Package, Download, RefreshCw, Filter, Edit, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { exportToExcel } from "@/lib/export";
@@ -78,15 +78,16 @@ export function ProductsTab() {
   const { data: suppliersData } = useSuppliers(true);
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
-  const deleteProductMutation = useDeleteProduct(); // Import useDeleteProduct
+  const deleteProductMutation = useDeleteProduct();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null); // For StockAlertDialog
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
   const [isEditingProduct, setIsEditingProduct] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // State for delete dialog
-  const [productToDeleteId, setProductToDeleteId] = useState<number | null>(null); // State for product to delete
-  // const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null); // Replaced by react-hook-form
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [productToDeleteId, setProductToDeleteId] = useState<number | null>(null);
+  const [isViewProductDialogOpen, setIsViewProductDialogOpen] = useState(false); // For view dialog
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null); // For view dialog
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [supplierFilter, setSupplierFilter] = useState("all");
 
@@ -100,7 +101,7 @@ export function ProductsTab() {
       unit_price: 0,
       quantity_in_stock: 0,
       reorder_level: 0,
-      supplier_id: undefined, // default to undefined
+      supplier_id: undefined,
       is_active: true,
     },
   });
@@ -122,8 +123,8 @@ export function ProductsTab() {
         });
       }
     } else if (!isAddProductDialogOpen) {
-      form.reset(); // Reset form fields to default when dialog closes
-      setSelectedProductId(null); // Clear selected product ID
+      form.reset();
+      // setSelectedProductId(null); // Keep for StockAlertDialog
     }
   }, [isAddProductDialogOpen, isEditingProduct, selectedProductId, products, form]);
 
@@ -131,7 +132,7 @@ export function ProductsTab() {
   const handleOpenAddProductDialog = () => {
     setIsEditingProduct(false);
     setSelectedProductId(null);
-    form.reset(); // Reset form fields to default
+    form.reset();
     setIsAddProductDialogOpen(true);
   };
 
@@ -139,6 +140,31 @@ export function ProductsTab() {
     setIsEditingProduct(true);
     setSelectedProductId(product.id);
     setIsAddProductDialogOpen(true);
+  };
+
+  const handleDeleteClick = (productId: number) => {
+    setProductToDeleteId(productId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (productToDeleteId) {
+      try {
+        await deleteProductMutation.mutateAsync(productToDeleteId);
+        toast.success("Product deleted successfully!");
+        refetch();
+      } catch (err: any) {
+        toast.error(`Failed to delete product: ${err.message || 'Unknown error'}`);
+      } finally {
+        setIsDeleteDialogOpen(false);
+        setProductToDeleteId(null);
+      }
+    }
+  };
+
+  const handleViewProduct = (product: Product) => {
+    setViewingProduct(product);
+    setIsViewProductDialogOpen(true);
   };
 
   const onSubmit = async (values: ProductFormValues) => {
@@ -154,7 +180,7 @@ export function ProductsTab() {
             reorder_level: values.reorder_level,
             supplier_id: values.supplier_id,
             is_active: values.is_active,
-        } as Partial<ProductCreate> }); // Cast to partial as not all fields might be updated
+        } as Partial<ProductCreate> });
         toast.success("Product updated successfully!");
       } else {
         const createPayload: ProductCreate = {
@@ -214,7 +240,6 @@ export function ProductsTab() {
     return <ErrorState message="Failed to load products" onRetry={refetch} />;
   }
 
-  // Extract unique categories
   const categories = Array.from(new Set(products?.map(p => p.category).filter(Boolean)));
 
   return (
@@ -330,7 +355,7 @@ export function ProductsTab() {
                             <Button variant="ghost" size="icon" onClick={() => handleEditProduct(product)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => toast.info(`Viewing product ${product.id}`)}>
+                            <Button variant="ghost" size="icon" onClick={() => handleViewProduct(product)}>
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(product.id)}>
@@ -499,38 +524,6 @@ export function ProductsTab() {
               />
               <FormField
                 control={form.control}
-                name="image_url" // Hidden field for current image URL
-                render={({ field }) => (
-                  <>
-                    {field.value && (
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <FormLabel className="text-right">Current Image</FormLabel>
-                        <div className="col-span-3">
-                          <img src={field.value} alt="Product" className="w-24 h-24 object-cover rounded-md" />
-                        </div>
-                      </div>
-                    )}
-                    <FormItem className="grid grid-cols-4 items-center gap-4">
-                      <FormLabel htmlFor="image_file" className="text-right">Upload Image</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="image_file"
-                          type="file"
-                          className="col-span-3"
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              setImageFile(e.target.files[0]);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="col-span-4 col-start-2" />
-                    </FormItem>
-                  </>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="is_active"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-4 items-center gap-4">
@@ -549,12 +542,58 @@ export function ProductsTab() {
               />
               <DialogFooter>
                 <Button variant="outline" type="button" onClick={() => setIsAddProductDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={form.formState.isSubmitting || createProductMutation.isPending || updateProductMutation.isPending || isImageUploading}>
-                  {form.formState.isSubmitting || createProductMutation.isPending || updateProductMutation.isPending || isImageUploading ? "Saving..." : "Save Product"}
+                <Button type="submit" disabled={form.formState.isSubmitting || createProductMutation.isPending || updateProductMutation.isPending}>
+                  {form.formState.isSubmitting || createProductMutation.isPending || updateProductMutation.isPending ? "Saving..." : "Save Product"}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Product Details Dialog */}
+      <Dialog open={isViewProductDialogOpen} onOpenChange={setIsViewProductDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Product Details</DialogTitle>
+            <DialogDescription>Detailed information about the selected product.</DialogDescription>
+          </DialogHeader>
+          {viewingProduct && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2">
+                <Label className="text-muted-foreground">Name:</Label>
+                <p className="font-medium">{viewingProduct.name}</p>
+
+                <Label className="text-muted-foreground">SKU:</Label>
+                <p>{viewingProduct.sku}</p>
+
+                <Label className="text-muted-foreground">Category:</Label>
+                <p>{viewingProduct.category || 'N/A'}</p>
+
+                <Label className="text-muted-foreground">Supplier:</Label>
+                <p>{viewingProduct.supplier_name || 'N/A'}</p>
+
+                <Label className="text-muted-foreground">Unit Price:</Label>
+                <p>KES {(viewingProduct.unit_price || 0).toLocaleString()}</p>
+
+                <Label className="text-muted-foreground">Stock Quantity:</Label>
+                <p>{viewingProduct.quantity_in_stock}</p>
+
+                <Label className="text-muted-foreground">Reorder Level:</Label>
+                <p>{viewingProduct.reorder_level}</p>
+
+                <Label className="text-muted-foreground">Active:</Label>
+                <p>{viewingProduct.is_active ? 'Yes' : 'No'}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Description:</Label>
+                <p>{viewingProduct.description || 'N/A'}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewProductDialogOpen(false)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

@@ -20,22 +20,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BudgetUsage, BudgetUsageCreate, BudgetUsageUpdate, BudgetUsageType } from '@/types/api';
+import { BudgetUsage, BudgetUsageCreate, BudgetUsageUpdate } from '@/types/api';
 import { useCreateBudgetUsage, useUpdateBudgetUsage } from '@/hooks/use-finance';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '../ui/loading-spinner';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { Calendar } from '../ui/calendar';
+import { cn } from '@/lib/utils';
+import { useSubBudgets } from '@/hooks/use-finance'; // To fetch sub-budgets
 
 interface BudgetUsageFormProps {
-  subBudgetId: number;
+  subBudgetId?: number; // Optional, if creating from a master budget context
   initialData?: BudgetUsage;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
 const formSchema = z.object({
-  description: z.string().optional(),
-  amount: z.coerce.number().min(0, 'Amount must be non-negative'),
-  type: z.enum(['expense', 'allocation', 'adjustment']),
-  transaction_date: z.string().min(1, 'Transaction date is required'),
+  sub_budget_id: z.coerce.number().int().min(1, 'Sub-budget is required.'),
+  description: z.string().min(1, 'Description is required.'),
+  amount: z.coerce.number().min(0, 'Amount must be non-negative.'),
+  date: z.date({ required_error: "Date is required." }),
+  status: z.enum(['Pending', 'Approved', 'Rejected']),
 });
 
 type BudgetUsageFormValues = z.infer<typeof formSchema>;
@@ -43,17 +51,21 @@ type BudgetUsageFormValues = z.infer<typeof formSchema>;
 export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel }: BudgetUsageFormProps) {
   const isEditing = !!initialData?.id;
 
+  // Assuming a masterBudgetId is passed for context if not editing
+  // For simplicity, we'll fetch all sub-budgets. In a real app, you might filter by masterBudgetId
+  const { data: subBudgets, isLoading: loadingSubBudgets } = useSubBudgets(subBudgetId || 0, 0, 1000);
+
   const form = useForm<BudgetUsageFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
       ...initialData,
-      amount: typeof initialData.amount === 'string' ? parseFloat(initialData.amount) : initialData.amount,
-      transaction_date: initialData.transaction_date ? new Date(initialData.transaction_date).toISOString().split('T')[0] : '',
+      date: new Date(initialData.date),
     } : {
+      sub_budget_id: subBudgetId || undefined,
       description: '',
       amount: 0,
-      type: 'expense', // Default type
-      transaction_date: new Date().toISOString().split('T')[0], // Default to today
+      date: new Date(),
+      status: 'Pending',
     },
   });
 
@@ -61,26 +73,30 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
     if (initialData) {
       form.reset({
         ...initialData,
-        amount: typeof initialData.amount === 'string' ? parseFloat(initialData.amount) : initialData.amount,
-        transaction_date: initialData.transaction_date ? new Date(initialData.transaction_date).toISOString().split('T')[0] : '',
+        date: new Date(initialData.date),
       });
     }
   }, [initialData, form]);
 
-  const createBudgetUsageMutation = useCreateBudgetUsage();
-  const updateBudgetUsageMutation = useUpdateBudgetUsage();
+  const createUsageMutation = useCreateBudgetUsage();
+  const updateUsageMutation = useUpdateBudgetUsage();
 
   const onSubmit = async (values: BudgetUsageFormValues) => {
     try {
+      const usageData = {
+        ...values,
+        date: format(values.date, 'yyyy-MM-dd'),
+      };
+
       if (isEditing) {
         if (!initialData?.id) {
           toast.error("Error: Budget Usage ID is missing for update operation.");
           return;
         }
-        await updateBudgetUsageMutation.mutateAsync({ id: initialData.id, data: values as BudgetUsageUpdate });
+        await updateUsageMutation.mutateAsync({ id: initialData.id, data: usageData as BudgetUsageUpdate });
         toast.success('Budget Usage updated successfully!');
       } else {
-        await createBudgetUsageMutation.mutateAsync({ ...values, sub_budget_id: subBudgetId } as BudgetUsageCreate);
+        await createUsageMutation.mutateAsync(usageData as BudgetUsageCreate);
         toast.success('Budget Usage created successfully!');
       }
       onSuccess();
@@ -94,12 +110,40 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
+          name="sub_budget_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sub-budget</FormLabel>
+              <Select onValueChange={value => field.onChange(parseInt(value))} value={field.value ? String(field.value) : ""}>
+                <FormControl>
+                  <SelectTrigger disabled={loadingSubBudgets}>
+                    <SelectValue placeholder="Select a sub-budget" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {loadingSubBudgets ? (
+                    <SelectItem value="loading" disabled>Loading sub-budgets...</SelectItem>
+                  ) : (
+                    subBudgets?.map((subBudget) => (
+                      <SelectItem key={subBudget.id} value={String(subBudget.id)}>
+                        {subBudget.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea placeholder="Spent on office supplies" {...field} />
+                <Textarea placeholder="e.g., Purchased new equipment" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -112,7 +156,7 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
             <FormItem>
               <FormLabel>Amount</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="1000" {...field} />
+                <Input type="number" placeholder="e.g., 5000" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -120,35 +164,60 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
         />
         <FormField
           control={form.control}
-          name="type"
+          name="date"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="status"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Type</FormLabel>
+              <FormLabel>Status</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select usage type" />
+                    <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="allocation">Allocation</SelectItem>
-                  <SelectItem value="adjustment">Adjustment</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="transaction_date"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Transaction Date</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -158,12 +227,9 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={form.formState.isSubmitting || createBudgetUsageMutation.isPending || updateBudgetUsageMutation.isPending}>
-            {form.formState.isSubmitting || createBudgetUsageMutation.isPending || updateBudgetUsageMutation.isPending
-              ? 'Saving...'
-              : isEditing
-                ? 'Update Usage'
-                : 'Create Usage'}
+          <Button type="submit" disabled={createUsageMutation.isPending || updateUsageMutation.isPending}>
+            {createUsageMutation.isPending || updateUsageMutation.isPending ? <LoadingSpinner className="mr-2" /> : null}
+            {isEditing ? 'Update Usage' : 'Create Usage'}
           </Button>
         </div>
       </form>

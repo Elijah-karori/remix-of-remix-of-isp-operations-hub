@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-// import { Label } from "@/components/ui/label"; // Label is part of FormField now
+import { Label } from "@/components/ui/label"; // Keep Label for view dialog
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Search, Truck, Phone, Mail, RefreshCw, Download, Edit, Trash2, Eye } from "lucide-react";
-import { useState, useEffect } from "react"; // Added useEffect
+import { useState, useEffect } from "react";
 
 // react-hook-form and zod imports
 import { useForm } from "react-hook-form";
@@ -62,13 +62,13 @@ export function SuppliersTab() {
   const { data: suppliers, isLoading, error, refetch } = useSuppliers();
   const createSupplierMutation = useCreateSupplier();
   const updateSupplierMutation = useUpdateSupplier();
-  const deleteSupplierMutation = useDeleteSupplier(); // Import useDeleteSupplier hook
+  const deleteSupplierMutation = useDeleteSupplier();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddSupplierDialogOpen, setIsAddSupplierDialogOpen] = useState(false);
   const [isEditingSupplier, setIsEditingSupplier] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // State for delete dialog
-  const [supplierToDeleteId, setSupplierToDeleteId] = useState<number | null>(null); // State for supplier to delete
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [supplierToDeleteId, setSupplierToDeleteId] = useState<number | null>(null);
   const [isViewSupplierDialogOpen, setIsViewSupplierDialogOpen] = useState(false); // State for view dialog
   const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null); // State for supplier to view
 
@@ -86,8 +86,8 @@ export function SuppliersTab() {
   });
 
   useEffect(() => {
-    if (isAddSupplierDialogOpen && isEditingSupplier && supplierToDeleteId) { // Using supplierToDeleteId as a proxy for selected supplier ID
-      const supplierToEdit = suppliers?.find(s => s.id === supplierToDeleteId); // Find by ID
+    if (isAddSupplierDialogOpen && isEditingSupplier && supplierToDeleteId) {
+      const supplierToEdit = suppliers?.find(s => s.id === supplierToDeleteId);
       if (supplierToEdit) {
         form.reset({
           name: supplierToEdit.name || "",
@@ -99,22 +99,22 @@ export function SuppliersTab() {
         });
       }
     } else if (!isAddSupplierDialogOpen) {
-      form.reset(); // Reset form fields to default when dialog closes
-      setSupplierToDeleteId(null); // Clear selected supplier ID
+      form.reset();
+      setSupplierToDeleteId(null);
     }
   }, [isAddSupplierDialogOpen, isEditingSupplier, supplierToDeleteId, suppliers, form]);
 
 
   const handleOpenAddSupplierDialog = () => {
     setIsEditingSupplier(false);
-    setSupplierToDeleteId(null); // Clear selected supplier ID
-    form.reset(); // Reset form fields to default
+    setSupplierToDeleteId(null);
+    form.reset();
     setIsAddSupplierDialogOpen(true);
   };
 
   const handleEditSupplier = (supplier: Supplier) => {
     setIsEditingSupplier(true);
-    setSupplierToDeleteId(supplier.id); // Set the ID for editing
+    setSupplierToDeleteId(supplier.id);
     setIsAddSupplierDialogOpen(true);
   };
 
@@ -312,7 +312,7 @@ export function SuppliersTab() {
             <AlertDialogAction onClick={handleConfirmDelete} disabled={deleteSupplierMutation.isPending}>
               {deleteSupplierMutation.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
-          </DialogFooter>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -420,3 +420,42 @@ export function SuppliersTab() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* View Supplier Details Dialog */}
+      <Dialog open={isViewSupplierDialogOpen} onOpenChange={setIsViewSupplierDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Supplier Details</DialogTitle>
+            <DialogDescription>Detailed information about the selected supplier.</DialogDescription>
+          </DialogHeader>
+          {viewingSupplier && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2">
+                <Label className="text-muted-foreground">Name:</Label>
+                <p className="font-medium">{viewingSupplier.name}</p>
+
+                <Label className="text-muted-foreground">Contact Person:</Label>
+                <p>{viewingSupplier.contact_person || 'N/A'}</p>
+
+                <Label className="text-muted-foreground">Email:</Label>
+                <p>{viewingSupplier.email}</p>
+
+                <Label className="text-muted-foreground">Phone:</Label>
+                <p>{viewingSupplier.phone}</p>
+
+                <Label className="text-muted-foreground">Address:</Label>
+                <p>{viewingSupplier.address || 'N/A'}</p>
+
+                <Label className="text-muted-foreground">Active:</Label>
+                <p>{viewingSupplier.is_active ? 'Yes' : 'No'}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewSupplierDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

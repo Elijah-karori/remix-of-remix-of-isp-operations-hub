@@ -25,7 +25,7 @@ import { useProcurementOrders, useApproveOrder, useCreateOrder } from "@/hooks/u
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { exportToExcel } from "@/lib/export";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Import DialogFooter
 import { PurchaseOrderForm } from "@/components/dashboard/forms/PurchaseOrderForm"; // Import PurchaseOrderForm
 
 export default function ProcurementTab() {
@@ -225,7 +225,7 @@ export default function ProcurementTab() {
                               <CheckCircle className="w-4 h-4 text-green-600" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleOrderAction(order.id, "reject")}>
-                              <XCircle className="w-4 h-4 text-red-600" />
+                              <XCircle className="h-4 w-4 text-red-600" />
                             </Button>
                           </>
                         )}

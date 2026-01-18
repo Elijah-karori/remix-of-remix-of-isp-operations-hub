@@ -1,8 +1,27 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserOut, MilestoneOut, BudgetSummary, ProjectFinancialsOut } from '@/types/api';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { financeApi, projectsApi } from '@/lib/api'; // Import financeApi
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { MilestoneForm } from '@/components/projects/MilestoneForm'; // New import
+import { ExclamationTriangleIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { financeApi, projectsApi } from '@/lib/api';
+import { ProjectOut, UserOut, MilestoneOut, BudgetSummary, ProjectFinancialsOut } from '@/types/api';
+import { useMilestones } from '@/hooks/use-projects'; // New import for milestones
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,18 +39,57 @@ const ProjectDetail: React.FC = () => {
     enabled: !!projectId && !isNaN(projectId),
   });
 
-  const { data: milestones, isLoading: isMilestonesLoading, error: milestonesError } = useQuery<MilestoneOut[], Error>({
-    queryKey: ['projectMilestones', projectId],
-    queryFn: () => projectsApi.getMilestones(projectId),
+  const { data: milestones, isLoading: isMilestonesLoading, error: milestonesError, refetch: refetchMilestones } = useMilestones(projectId);
+
+  // States for milestone dialogs
+  const [isCreateMilestoneDialogOpen, setIsCreateMilestoneDialogOpen] = useState(false);
+  const [isEditMilestoneDialogOpen, setIsEditMilestoneDialogOpen] = useState(false);
+  const [milestoneToEdit, setMilestoneToEdit] = useState<MilestoneOut | null>(null);
+
+  // Financials hooks
+  const { data: budgetSummary, isLoading: isBudgetSummaryLoading, error: budgetSummaryError } = useQuery<BudgetSummary, Error>({
+    queryKey: ['projectBudgetSummary', projectId],
+    queryFn: () => financeApi.projectBudgetSummary(projectId),
+    enabled: !!projectId && !isNaN(projectId),
+  });
+
+  const { data: projectFinancials, isLoading: isProjectFinancialsLoading, error: projectFinancialsError } = useQuery<ProjectFinancialsOut, Error>({
+    queryKey: ['projectFinancials', projectId],
+    queryFn: () => financeApi.projectFinancials(projectId),
+    enabled: !!projectId && !isNaN(projectId),
+  });
+
+  const { data: costs, isLoading: isCostsLoading, error: costsError } = useQuery<any, Error>({
+    queryKey: ['projectCosts', projectId],
+    queryFn: () => financeApi.trackProjectCosts(projectId),
+    enabled: !!projectId && !isNaN(projectId),
+  });
+
+  const { data: profitability, isLoading: isProfitabilityLoading, error: profitabilityError } = useQuery<any, Error>({
+    queryKey: ['projectProfitability', projectId],
+    queryFn: () => financeApi.projectProfitability(projectId),
     enabled: !!projectId && !isNaN(projectId),
   });
 
   const handleCreateMilestone = () => {
-    alert('Create Milestone functionality will be implemented here.');
+    setMilestoneToEdit(null);
+    setIsCreateMilestoneDialogOpen(true);
   };
 
-  const handleUpdateMilestone = (milestoneId: number) => {
-    alert(`Update Milestone ${milestoneId} functionality will be implemented here.`);
+  const handleEditMilestone = (milestone: MilestoneOut) => {
+    setMilestoneToEdit(milestone);
+    setIsEditMilestoneDialogOpen(true);
+  };
+
+  const handleMilestoneSuccess = () => {
+    refetchMilestones();
+    setIsCreateMilestoneDialogOpen(false);
+    setIsEditMilestoneDialogOpen(false);
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (amount === undefined || amount === null) return "N/A";
+    return `KES ${amount.toLocaleString()}`;
   };
 
   if (isNaN(projectId)) {
@@ -232,7 +290,7 @@ const ProjectDetail: React.FC = () => {
                           <TableCell>{milestone.status}</TableCell>
                           <TableCell>{milestone.progress}%</TableCell>
                           <TableCell>
-                            <Button variant="outline" size="sm" onClick={() => handleUpdateMilestone(milestone.id)}>Edit</Button>
+                            <Button variant="outline" size="sm" onClick={() => handleEditMilestone(milestone)}>Edit</Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -322,7 +380,14 @@ const ProjectDetail: React.FC = () => {
                     <Separator className="col-span-2 my-2" />
                     <h3 className="text-lg font-semibold col-span-2">Current Costs</h3>
                     {/* Assuming costs object has properties to display */}
-                    <pre className="col-span-2 text-sm bg-muted p-2 rounded">{JSON.stringify(costs, null, 2)}</pre>
+                    <div className="grid grid-cols-2 gap-2 col-span-2">
+                        {Object.entries(costs).map(([key, value]) => (
+                            <div key={key} className="flex justify-between">
+                                <span className="text-muted-foreground">{key.replace(/_/g, ' ')}:</span>
+                                <span>{typeof value === 'number' ? formatCurrency(value) : String(value)}</span>
+                            </div>
+                        ))}
+                    </div>
                   </>
                 )}
 
@@ -331,7 +396,14 @@ const ProjectDetail: React.FC = () => {
                     <Separator className="col-span-2 my-2" />
                     <h3 className="text-lg font-semibold col-span-2">Profitability Analysis</h3>
                     {/* Assuming profitability object has properties to display */}
-                    <pre className="col-span-2 text-sm bg-muted p-2 rounded">{JSON.stringify(profitability, null, 2)}</pre>
+                     <div className="grid grid-cols-2 gap-2 col-span-2">
+                        {Object.entries(profitability).map(([key, value]) => (
+                            <div key={key} className="flex justify-between">
+                                <span className="text-muted-foreground">{key.replace(/_/g, ' ')}:</span>
+                                <span>{typeof value === 'number' ? formatCurrency(value) : String(value)}</span>
+                            </div>
+                        ))}
+                    </div>
                   </>
                 )}
 
@@ -345,6 +417,34 @@ const ProjectDetail: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Create Milestone Dialog */}
+      <Dialog open={isCreateMilestoneDialogOpen} onOpenChange={setIsCreateMilestoneDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Milestone</DialogTitle>
+            <DialogDescription>
+              Create a new milestone for this project.
+            </DialogDescription>
+          </DialogHeader>
+          <MilestoneForm projectId={projectId} onSuccess={handleMilestoneSuccess} onCancel={() => setIsCreateMilestoneDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Milestone Dialog */}
+      <Dialog open={isEditMilestoneDialogOpen} onOpenChange={setIsEditMilestoneDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Milestone</DialogTitle>
+            <DialogDescription>
+              Make changes to the milestone details.
+            </DialogDescription>
+          </DialogHeader>
+          {milestoneToEdit && (
+            <MilestoneForm projectId={projectId} initialData={milestoneToEdit} onSuccess={handleMilestoneSuccess} onCancel={() => setIsEditMilestoneDialogOpen(false)} />
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
