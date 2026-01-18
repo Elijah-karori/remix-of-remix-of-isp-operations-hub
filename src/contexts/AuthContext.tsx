@@ -36,25 +36,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       // Fetch user and permissions in sequence to ensure we have both
       const userData = await authApi.me() as User;
+      console.log("Auth System - User Data (auth/me):", userData);
       setUser(userData);
-      
+
       try {
-        const permissionsData = await rbacApi.myPermissions() as Promise<{ permissions: { codename: string }[] }>;
-        setPermissions(permissionsData.permissions.map((p) => p.codename));
+        const permissionsData = await rbacApi.myPermissions();
+        console.log("Auth System - Auth Token:", token);
+        console.log("Auth System - RBAC Permissions Response:", permissionsData);
+
+        const perms = permissionsData.permissions.map((p) => p.codename);
+        console.log("Auth System - Parsed Permissions:", perms);
+        setPermissions(perms);
       } catch (permError) {
-        console.warn("Failed to fetch permissions, using empty array:", permError);
+        console.warn("Auth System - Failed to fetch permissions, using empty array:", permError);
         setPermissions([]);
       }
-      
+
       return true;
     } catch (error) {
       console.error("Failed to fetch user:", error);
-      
+
       // Clear invalid token
-      if (error instanceof Error && 
-          (error.message.includes("Session expired") || 
-           error.message.includes("401") ||
-           error.message.includes("Unauthorized"))) {
+      if (error instanceof Error &&
+        (error.message.includes("Session expired") ||
+          error.message.includes("401") ||
+          error.message.includes("Unauthorized"))) {
         setAccessToken(null);
         setUser(null);
         setPermissions([]);
@@ -76,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // 1. Get token from login
       await authApi.login(email, password);
-      
+
       // 2. Fetch user data and permissions
       const success = await fetchUserAndPermissions();
       if (!success) {

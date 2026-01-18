@@ -24,6 +24,17 @@ import Permissions from "./pages/system/permissions";
 import Analytics from "./pages/system/analytics";
 import Audit from "./pages/system/audit";
 import SystemSettings from "./pages/system/settings";
+import Leads from "./pages/CRM/Leads";
+import Deals from "./pages/CRM/Deals"; // New import for Deals page
+import Activities from "./pages/CRM/Activities";
+import CRMIndex from "./pages/CRM/Index";
+import FinanceIndex from "./pages/Finance/Index"; // New import
+import Budgets from "./pages/Finance/Budgets";     // New import
+import Invoices from "./pages/Finance/Invoices";   // New import
+import Accounts from "./pages/Finance/Accounts";   // New import
+import Reports from "./pages/Finance/Reports";
+import Mpesa from "./pages/Finance/Mpesa";     // New import
+import Ncba from "./pages/Finance/Ncba";       // New import
 
 const queryClient = new QueryClient();
 
@@ -32,7 +43,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <Routes>
             {/* Public auth routes */}
@@ -53,6 +64,38 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route // New route for CRM Leads
+              path="/crm/leads"
+              element={
+                <ProtectedRoute>
+                  <Leads />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for CRM Deals
+              path="/crm/deals"
+              element={
+                <ProtectedRoute>
+                  <Deals />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for CRM Activities
+              path="/crm/activities"
+              element={
+                <ProtectedRoute>
+                  <Activities />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for CRM Index
+              path="/crm"
+              element={
+                <ProtectedRoute>
+                  <CRMIndex />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/projects"
               element={
@@ -69,11 +112,59 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
+            <Route // New route for Finance Index
               path="/finance"
               element={
                 <ProtectedRoute>
-                  <Finance />
+                  <FinanceIndex />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for Finance Budgets
+              path="/finance/budgets"
+              element={
+                <ProtectedRoute>
+                  <Budgets />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for Finance Invoices
+              path="/finance/invoices"
+              element={
+                <ProtectedRoute>
+                  <Invoices />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for Finance Accounts
+              path="/finance/accounts"
+              element={
+                <ProtectedRoute>
+                  <Accounts />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for Finance Reports
+              path="/finance/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for Mpesa
+              path="/finance/mpesa"
+              element={
+                <ProtectedRoute>
+                  <Mpesa />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for NCBA Bank
+              path="/finance/ncba"
+              element={
+                <ProtectedRoute>
+                  <Ncba />
                 </ProtectedRoute>
               }
             />

@@ -408,6 +408,22 @@ export interface FinancialAccount {
     is_active: boolean;
 }
 
+export interface FinancialAccountCreate { // New interface
+    name: string;
+    type: string;
+    balance: number;
+    currency: string;
+    is_active?: boolean;
+}
+
+export interface FinancialAccountUpdate { // New interface
+    name?: string;
+    type?: string;
+    balance?: number;
+    currency?: string;
+    is_active?: boolean;
+}
+
 export interface BudgetSummary {
     project_id: number;
     total_budget: number;
@@ -559,6 +575,53 @@ export type BudgetUsageType = 'expense' | 'allocation' | 'adjustment';
 export type BudgetUsageStatus = 'approved' | 'pending' | 'rejected';
 export type SubBudgetType = string; // Using string as default if enum is not strictly defined yet
 
+export interface MasterBudget {
+    id: number;
+    name: string;
+    start_date: string;
+    end_date: string;
+    total_amount: string | number;
+    created_at: string;
+    updated_at?: string | null;
+    sub_budgets: SubBudget[];
+}
+
+export interface MasterBudgetCreate { // New interface
+    name: string;
+    start_date: string;
+    end_date: string;
+    total_amount: number; // Use number for creation
+}
+
+export interface MasterBudgetUpdate { // New interface
+    name?: string;
+    start_date?: string;
+    end_date?: string;
+    total_amount?: number;
+}
+
+export interface SubBudget {
+    id: number;
+    name: SubBudgetType;
+    amount: string | number;
+    financial_account_id?: number | null;
+    master_budget_id: number;
+    usages: BudgetUsage[];
+}
+
+export interface SubBudgetCreate { // New interface
+    name: SubBudgetType;
+    amount: number;
+    financial_account_id?: number;
+    master_budget_id: number;
+}
+
+export interface SubBudgetUpdate { // New interface
+    name?: SubBudgetType;
+    amount?: number;
+    financial_account_id?: number;
+}
+
 export interface BudgetUsage {
     id: number;
     sub_budget_id: number;
@@ -571,24 +634,140 @@ export interface BudgetUsage {
     updated_at?: string | null;
 }
 
-export interface SubBudget {
-    id: number;
-    name: SubBudgetType;
-    amount: string | number;
-    financial_account_id?: number | null;
-    master_budget_id: number;
-    usages: BudgetUsage[];
+export interface BudgetUsageCreate { // New interface
+    sub_budget_id: number;
+    description?: string;
+    amount: number;
+    type: BudgetUsageType;
+    transaction_date: string;
 }
 
-export interface MasterBudget {
+export interface BudgetUsageUpdate { // New interface
+    description?: string;
+    amount?: number;
+    type?: BudgetUsageType;
+    transaction_date?: string;
+    status?: BudgetUsageStatus;
+}
+
+export interface Invoice { // New interface
     id: number;
+    invoice_number: string;
+    customer_id?: number;
+    customer_name?: string;
+    issue_date: string;
+    due_date: string;
+    total_amount: number;
+    currency: string;
+    status: 'Pending' | 'Paid' | 'Overdue' | 'Cancelled';
+    items: InvoiceItem[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface InvoiceItem { // New interface
+    id: number;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total: number;
+}
+
+export interface InvoiceCreate { // New interface
+    customer_id?: number;
+    customer_name?: string;
+    issue_date: string;
+    due_date: string;
+    items: InvoiceItemCreate[];
+}
+
+export interface InvoiceItemCreate { // New interface
+    description: string;
+    quantity: number;
+    unit_price: number;
+}
+
+export interface InvoiceUpdate { // New interface
+    customer_id?: number;
+    customer_name?: string;
+    issue_date?: string;
+    due_date?: string;
+    total_amount?: number;
+    status?: 'Pending' | 'Paid' | 'Overdue' | 'Cancelled';
+    items?: InvoiceItemUpdate[];
+}
+
+export interface InvoiceItemUpdate { // New interface
+    id?: number; // Optional for existing items
+    description?: string;
+    quantity?: number;
+    unit_price?: number;
+    total?: number;
+}
+
+export interface MpesaC2BRequest {
+    phone_number: string;
+    amount: number;
+    bill_ref_number: string;
+}
+
+export interface MpesaSTKPushRequest {
+    phone_number: string;
+    amount: number;
+    account_reference: string;
+    description?: string;
+}
+
+export interface MpesaQRCodeRequest {
+    amount: number;
+    merchant_name: string;
+    ref_no: string;
+    trx_code?: string;
+}
+
+export interface MpesaB2CRequest {
+    phone_number: string;
+    amount: number;
+    remarks: string;
+    occasion?: string;
+}
+
+export interface MpesaB2BRequest {
+    amount: number;
+    receiver_shortcode: string;
+    account_reference: string;
+}
+
+export interface MpesaTaxRemittanceRequest {
+    amount: number;
+    remarks: string;
+}
+
+export interface MpesaRatibaCreate {
     name: string;
+    amount: number;
+    phone_number: string;
     start_date: string;
     end_date: string;
-    total_amount: string | number;
-    created_at: string;
-    updated_at?: string | null;
-    sub_budgets: SubBudget[];
+    frequency: string;
+}
+
+export interface MpesaTransactionStatusRequest {
+    transaction_id: string;
+}
+
+export interface MpesaReverseTransactionRequest {
+    transaction_id: string;
+    amount: number;
+    remarks?: string;
+    receiver_party?: string;
+}
+
+// NCBA Bank
+export interface NcbaPayRequest {
+    account_number: string;
+    amount: number;
+    currency?: string;
 }
 
 export interface FinancialSnapshotResponse {
@@ -598,4 +777,111 @@ export interface FinancialSnapshotResponse {
     receivables: Record<string, any>;
     infrastructure_performance: Record<string, any>;
     top_infrastructure?: string | null;
+}
+
+// --- CRM ---
+
+export interface Lead {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+    company?: string;
+    status: 'New' | 'Contacted' | 'Qualified' | 'Unqualified';
+    source?: string;
+    created_at: string;
+    updated_at: string;
+    owner_id?: number; // UserOut.id
+    description?: string;
+}
+
+export interface LeadCreate {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+    company?: string;
+    status?: 'New' | 'Contacted' | 'Qualified' | 'Unqualified';
+    source?: string;
+    description?: string;
+    owner_id?: number;
+}
+
+export interface LeadUpdate {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+    status?: 'New' | 'Contacted' | 'Qualified' | 'Unqualified';
+    source?: string;
+    description?: string;
+    owner_id?: number;
+}
+
+export interface Deal {
+    id: number;
+    name: string;
+    amount: number;
+    stage: 'Prospecting' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
+    close_date?: string; // Date string
+    created_at: string;
+    updated_at: string;
+    lead_id?: number;
+    owner_id?: number; // UserOut.id
+    description?: string;
+}
+
+export interface DealCreate {
+    name: string;
+    amount: number;
+    stage?: 'Prospecting' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
+    close_date?: string;
+    lead_id?: number;
+    owner_id?: number;
+    description?: string;
+}
+
+export interface DealUpdate {
+    name?: string;
+    amount?: number;
+    stage?: 'Prospecting' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
+    close_date?: string;
+    lead_id?: number;
+    owner_id?: number;
+    description?: string;
+}
+
+export interface Activity {
+    id: number;
+    activity_type: 'Call' | 'Meeting' | 'Email' | 'Task';
+    due_date?: string; // Date string
+    status: 'Pending' | 'Completed' | 'Cancelled';
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+    lead_id?: number;
+    deal_id?: number;
+    assigned_to_id?: number; // UserOut.id
+}
+
+export interface ActivityCreate {
+    activity_type: 'Call' | 'Meeting' | 'Email' | 'Task';
+    due_date?: string;
+    status?: 'Pending' | 'Completed' | 'Cancelled';
+    notes?: string;
+    lead_id?: number;
+    deal_id?: number;
+    assigned_to_id?: number;
+}
+
+export interface ActivityUpdate { // New interface
+    activity_type?: 'Call' | 'Meeting' | 'Email' | 'Task';
+    due_date?: string;
+    status?: 'Pending' | 'Completed' | 'Cancelled';
+    notes?: string;
+    lead_id?: number;
+    deal_id?: number;
+    assigned_to_id?: number;
 }

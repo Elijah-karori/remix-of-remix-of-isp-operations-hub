@@ -5,17 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-<<<<<<< HEAD
-import { Search, Download, Calendar as CalendarIcon, Filter, FileText, RefreshCw } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-=======
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, Download, Filter, FileText, RefreshCw, Loader2 } from 'lucide-react';
+import { Search, Download, Calendar as CalendarIcon, Filter, FileText, RefreshCw, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
+import { DateRange } from 'react-day-picker';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface AuditLog {
   id: number;
@@ -33,70 +31,30 @@ interface AuditLog {
 
 export default function AuditLogs() {
   const [searchTerm, setSearchTerm] = useState('');
-<<<<<<< HEAD
-  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ 
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({ 
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 
     to: new Date() 
   });
-  const [logs, setLogs] = useState<AuditLog[]>(() => generateMockLogs(50));
-=======
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [resourceFilter, setResourceFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const limit = 50;
 
-<<<<<<< HEAD
-  const handleRefresh = () => {
-    toast.info("Refreshing audit logs...");
-    setLogs(generateMockLogs(50));
-  };
-  
-  const filteredLogs = logs.filter(log => {
-    const matchesSearch = 
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.ipAddress.includes(searchTerm) ||
-      log.details.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (dateRange.from && dateRange.to) {
-      const logDate = new Date(log.timestamp);
-      return matchesSearch && 
-             logDate >= dateRange.from && 
-             logDate <= new Date(dateRange.to.getTime() + 24 * 60 * 60 * 1000);
-    }
-    
-    return matchesSearch;
-  });
-
-  const exportToCSV = () => {
-    toast.info("Exporting logs to CSV...");
-    const headers = "id,timestamp,action,userId,userEmail,ipAddress,details,status\n";
-    const csvContent = filteredLogs.map(log => 
-      `${log.id},${log.timestamp.toISOString()},"${log.action}","${log.userId}","${log.userEmail}","${log.ipAddress}","${log.details}","${log.status}"`
-    ).join("\n");
-
-    const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "audit-logs.csv");
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-=======
   const { data: logs, isLoading, error, refetch } = useQuery<AuditLog[]>({
-    queryKey: ['audit', 'logs', page, actionFilter, resourceFilter],
+    queryKey: ['audit', 'logs', page, actionFilter, resourceFilter, searchTerm, dateRange],
     queryFn: async () => {
       const params: any = { skip: page * limit, limit };
       if (actionFilter && actionFilter !== 'all') params.action = actionFilter;
       if (resourceFilter && resourceFilter !== 'all') params.resource = resourceFilter;
+      if (searchTerm) params.searchTerm = searchTerm; // Add searchTerm to API params
+      if (dateRange?.from) params.startDate = dateRange.from.toISOString();
+      if (dateRange?.to) params.endDate = dateRange.to.toISOString();
+
       return auditApi.logs(params) as Promise<AuditLog[]>;
     },
     staleTime: 30000,
+    keepPreviousData: true, // Keep previous data while fetching new data
   });
 
   const { data: stats } = useQuery<any>({
@@ -105,24 +63,48 @@ export default function AuditLogs() {
     staleTime: 60000,
   });
 
-  const filteredLogs = logs?.filter(log => {
+  const handleRefresh = () => {
+    toast.info("Refreshing audit logs...");
+    refetch(); // Trigger a refetch of the audit logs
+  };
+
+  const handleExport = async () => {
+    try {
+      toast.info("Exporting audit logs...");
+      // In a real scenario, you would call your backend export endpoint with current filters
+      const params: any = {};
+      if (actionFilter && actionFilter !== 'all') params.action = actionFilter;
+      if (resourceFilter && resourceFilter !== 'all') params.resource = resourceFilter;
+      if (searchTerm) params.searchTerm = searchTerm;
+      if (dateRange?.from) params.startDate = dateRange.from.toISOString();
+      if (dateRange?.to) params.endDate = dateRange.to.toISOString();
+
+      // Assuming auditApi.export can take filters
+      const result = await auditApi.export('csv', params);
+      console.log('Export result:', result);
+      toast.success("Audit logs exported successfully!");
+      // Optionally, trigger a download if the API returns a file directly
+    } catch (err) {
+      toast.error("Failed to export audit logs.");
+      console.error('Export failed:', err);
+    }
+  };
+
+  // Filter logs for display if the API doesn't do all filtering server-side
+  // If the API call above handles all filtering, this can be simplified to just `logs || []`
+  const displayedLogs = logs?.filter(log => {
     const matchesSearch = 
       log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.resource?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.ip_address?.includes(searchTerm);
-    return matchesSearch;
-  }) || [];
+    
+    const logDate = new Date(log.timestamp);
+    const matchesDateRange = (!dateRange?.from || logDate >= dateRange.from) &&
+                             (!dateRange?.to || logDate <= new Date(dateRange.to.getTime() + 24 * 60 * 60 * 1000)); // Include full 'to' day
 
-  const handleExport = async () => {
-    try {
-      const result = await auditApi.export('csv', 30);
-      console.log('Export result:', result);
-    } catch (err) {
-      console.error('Export failed:', err);
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
-    }
-  };
+    return matchesSearch && matchesDateRange;
+  }) || [];
 
   const getActionColor = (action: string) => {
     switch (action?.toLowerCase()) {
@@ -142,27 +124,6 @@ export default function AuditLogs() {
   };
 
   return (
-<<<<<<< HEAD
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Audit Logs</h1>
-          <p className="text-muted-foreground">
-            Track and monitor all system activities
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Button variant="outline" onClick={exportToCSV}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
-=======
     <DashboardLayout title="Audit Logs" subtitle="Track and monitor all system activities">
       <div className="space-y-6">
         {/* Stats Cards */}
@@ -202,7 +163,6 @@ export default function AuditLogs() {
             </Card>
           </div>
         )}
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
 
         <Card>
           <CardHeader>
@@ -214,7 +174,7 @@ export default function AuditLogs() {
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                <Button variant="outline" size="sm" onClick={handleRefresh}>
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Refresh
                 </Button>
@@ -271,7 +231,7 @@ export default function AuditLogs() {
               </div>
             ) : error ? (
               <div className="text-center py-8 text-destructive">
-                Failed to load audit logs. <Button variant="link" onClick={() => refetch()}>Retry</Button>
+                Failed to load audit logs. <Button variant="link" onClick={handleRefresh}>Retry</Button>
               </div>
             ) : (
               <>
@@ -288,8 +248,8 @@ export default function AuditLogs() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredLogs.length > 0 ? (
-                        filteredLogs.map((log) => (
+                      {displayedLogs.length > 0 ? (
+                        displayedLogs.map((log) => (
                           <TableRow key={log.id}>
                             <TableCell className="whitespace-nowrap">
                               {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
@@ -335,7 +295,7 @@ export default function AuditLogs() {
                 
                 <div className="mt-4 flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
-                    Page {page + 1} • Showing {filteredLogs.length} results
+                    Page {page + 1} • Showing {displayedLogs.length} results
                   </div>
                   <div className="flex space-x-2">
                     <Button 
@@ -349,7 +309,7 @@ export default function AuditLogs() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      disabled={filteredLogs.length < limit}
+                      disabled={displayedLogs.length < limit}
                       onClick={() => setPage(p => p + 1)}
                     >
                       Next

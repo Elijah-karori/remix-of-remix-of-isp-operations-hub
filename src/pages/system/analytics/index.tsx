@@ -19,13 +19,10 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-<<<<<<< HEAD
 import { toast } from 'sonner';
-=======
 import { dashboardApi, workflowApi, auditApi } from '@/lib/api';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { format, subDays } from 'date-fns';
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
 
 // Register ChartJS components
 ChartJS.register(
@@ -42,143 +39,6 @@ ChartJS.register(
 );
 
 export default function Analytics() {
-<<<<<<< HEAD
-  const exportData = (format: 'csv' | 'json' | 'excel') => {
-    toast.info(`Exporting data as ${format}...`);
-    // Implement actual export
-    const link = document.createElement('a');
-    link.href = `/api/v1/analytics/export?format=${format}`;
-    link.download = `analytics-${new Date().toISOString()}.${format}`;
-    link.click();
-  };
-
-  const refreshData = () => {
-    // Refetch all queries
-    toast.info("Refreshing analytics data...");
-    // QueryClient.refetchQueries({ queryKey: ['analytics'] })
-  };
-
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">System Analytics</h1>
-          <p className="text-muted-foreground">
-            Monitor system performance and usage metrics
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={refreshData}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => exportData('csv')}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
-
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="api">API Analytics</TabsTrigger>
-          <TabsTrigger value="errors">Error Tracking</TabsTrigger>
-          <TabsTrigger value="activity">Activity Logs</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Logins (7d)</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1,234</div>
-                <p className="text-xs text-muted-foreground">+12.5% from last week</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">API Success Rate</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">98.7%</div>
-                <p className="text-xs text-muted-foreground">+0.5% from last week</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">573</div>
-                <p className="text-xs text-muted-foreground">+23% from last week</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Response Time</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">143ms</div>
-                <p className="text-xs text-muted-foreground">-12ms from last week</p>
-              </CardContent>
-            </Card>
-=======
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('7d');
 
   const { data: projectsOverview, isLoading: loadingProjects, refetch: refetchProjects } = useQuery<any>({
@@ -272,7 +132,7 @@ export default function Analytics() {
       label: 'Activities',
       data: Array.from({ length: dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 14 }, () => 
         Math.floor(Math.random() * 50) + 10
-      ),
+      ), // This data is still mocked. In a real app, this would come from API.
       fill: true,
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
       borderColor: 'rgba(59, 130, 246, 1)',
@@ -298,11 +158,15 @@ export default function Analytics() {
   };
 
   const refreshData = () => {
-    refetchProjects();
+    toast.info("Refreshing analytics data...");
+    refetchProjects(); // Refetching one query to demonstrate. In real app, all relevant queries would be refetched.
   };
 
-  const exportData = () => {
-    console.log('Exporting analytics data...');
+  const exportData = (formatType: 'csv' | 'json' | 'excel' = 'csv') => { // Renamed param to avoid conflict
+    toast.info(`Exporting data as ${formatType}...`);
+    // In a real scenario, you would call your backend export endpoint
+    // Example: dashboardApi.exportAnalytics(formatType, dateRange);
+    console.log(`Simulating export of ${formatType} for ${dateRange}`);
   };
 
   return (
@@ -331,14 +195,13 @@ export default function Analytics() {
             >
               90 Days
             </Button>
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={refreshData}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            <Button variant="outline" size="sm" onClick={exportData}>
+            <Button variant="outline" size="sm" onClick={() => exportData('csv')}>
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>

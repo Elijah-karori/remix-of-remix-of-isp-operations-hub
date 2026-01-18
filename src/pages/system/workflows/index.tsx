@@ -15,47 +15,19 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-<<<<<<< HEAD
-import { Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge'; // From merged branch
+import { Input } from '@/components/ui/input'; // From merged branch
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // From merged branch
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // From merged branch
+import { Plus, Play, Clock, CheckCircle2, XCircle, Loader2, RefreshCw, GitBranch } from 'lucide-react'; // Combined icons
+import { workflowApi } from '@/lib/api'; // From merged branch
+import { WorkflowDefinitionRead, WorkflowInstanceRead } from '@/types/api'; // From merged branch
+import { DashboardLayout } from '@/components/layout/DashboardLayout'; // From merged branch
+import { toast } from 'sonner'; // Keeping sonner toast as it's consistently used elsewhere in the project
+import { format } from 'date-fns'; // From merged branch
 
+// nodeTypes can be extended for custom nodes if needed, but for now, it's empty as in HEAD
 const nodeTypes = {};
-
-const initialNodes: Node[] = [
-  {
-    id: '1',
-    type: 'input',
-    data: { label: 'Start' },
-    position: { x: 250, y: 0 },
-  },
-  {
-    id: '2',
-    data: { label: 'Approval 1' },
-    position: { x: 100, y: 100 },
-  },
-  {
-    id: '3',
-    data: { label: 'Approval 2' },
-    position: { x: 400, y: 100 },
-  },
-];
-
-const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2' },
-  { id: 'e1-3', source: '1', target: '3' },
-];
-=======
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Play, Clock, CheckCircle2, XCircle, Loader2, RefreshCw, GitBranch } from 'lucide-react';
-import { workflowApi } from '@/lib/api';
-import { WorkflowDefinitionRead, WorkflowInstanceRead } from '@/types/api';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { toast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
 
 export default function Workflows() {
   const queryClient = useQueryClient();
@@ -84,22 +56,22 @@ export default function Workflows() {
   const approveMutation = useMutation({
     mutationFn: ({ id, comment }: { id: number; comment?: string }) => workflowApi.approve(id, comment),
     onSuccess: () => {
-      toast({ title: 'Approved', description: 'Workflow instance approved successfully' });
+      toast.success('Workflow instance approved successfully'); // Using sonner toast
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
     },
     onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      toast.error(err.message); // Using sonner toast
     },
   });
 
   const rejectMutation = useMutation({
     mutationFn: ({ id, comment }: { id: number; comment?: string }) => workflowApi.reject(id, comment),
     onSuccess: () => {
-      toast({ title: 'Rejected', description: 'Workflow instance rejected' });
+      toast.success('Workflow instance rejected'); // Using sonner toast
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
     },
     onError: (err: Error) => {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      toast.error(err.message); // Using sonner toast
     },
   });
 
@@ -107,11 +79,17 @@ export default function Workflows() {
   const loadWorkflowToEditor = (workflow: WorkflowDefinitionRead) => {
     setSelectedWorkflow(workflow);
     
+    // Clear existing nodes and edges
+    setNodes([]);
+    setEdges([]);
+
     const newNodes: Node[] = workflow.steps?.map((step, index) => ({
       id: step.id,
       type: step.type === 'start' ? 'input' : step.type === 'end' ? 'output' : 'default',
       data: { label: step.name },
       position: { x: 150, y: index * 100 },
+      // Apply style for approval nodes based on the HEAD branch's logic if applicable
+      style: step.type === 'approval' ? { backgroundColor: '#fde047', color: '#1e293b' } : undefined,
     })) || [];
 
     const newEdges: Edge[] = [];
@@ -144,84 +122,39 @@ export default function Workflows() {
     []
   );
 
-<<<<<<< HEAD
-  const addNode = (type: 'default' | 'approval') => {
-    const newNode = {
-      id: `${nodes.length + 1}`,
-      data: { label: type === 'approval' ? `Approval ${nodes.length}` : `Step ${nodes.length}` },
-=======
-  const addNode = () => {
+  const addNode = (type: 'default' | 'approval' = 'default') => { // Combined addNode logic
     const newNode: Node = {
-      id: `node-${Date.now()}`,
-      data: { label: `Step ${nodes.length + 1}` },
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
+      id: `node-${Date.now()}`, // Unique ID from merged branch
+      data: { label: type === 'approval' ? `Approval ${nodes.length + 1}` : `Step ${nodes.length + 1}` }, // Label from HEAD
       position: {
-        x: 150,
-        y: nodes.length * 100,
+        x: Math.random() * 250, // Random position for new nodes
+        y: Math.random() * 250,
       },
-      style: type === 'approval' ? { backgroundColor: '#fde047', color: '#1e293b' } : undefined,
+      style: type === 'approval' ? { backgroundColor: '#fde047', color: '#1e293b' } : undefined, // Style from HEAD
     };
     setNodes((nds) => [...nds, newNode]);
   };
 
-<<<<<<< HEAD
-  const handleSave = () => {
+  const handleSaveWorkflow = () => { // Renamed to avoid conflict
     toast.info("Saving workflow...");
+    // Implement actual API call to save workflow
     console.log("Nodes:", nodes);
     console.log("Edges:", edges);
+    // workflowApi.saveWorkflow(selectedWorkflow.id, { nodes, edges });
     setTimeout(() => {
       toast.success("Workflow saved successfully");
     }, 1000);
   };
 
-  const handlePublish = () => {
+  const handlePublishWorkflow = () => { // Renamed to avoid conflict
     toast.info("Publishing workflow...");
+    // Implement actual API call to publish workflow
+    // workflowApi.publishWorkflow(selectedWorkflow.id);
     setTimeout(() => {
       toast.success("Workflow published successfully");
     }, 1000);
   };
 
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Workflow Designer</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSave}>Save Workflow</Button>
-          <Button onClick={handlePublish}>Publish</Button>
-        </div>
-      </div>
-      
-      <Card className="h-[600px]">
-        <CardHeader>
-          <CardTitle>Design your workflow</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[calc(100%-80px)]">
-          <div className="h-full w-full">
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              fitView
-            >
-              <Controls />
-              <Background />
-              <Panel position="top-right" className="flex gap-2">
-                <Button size="sm" onClick={() => addNode('default')} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Step
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => addNode('approval')}>
-                  Add Approval
-                </Button>
-              </Panel>
-            </ReactFlow>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-=======
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'pending':
@@ -424,10 +357,10 @@ export default function Workflows() {
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleSaveWorkflow}>
                     Save Draft
                   </Button>
-                  <Button size="sm">
+                  <Button size="sm" onClick={handlePublishWorkflow}>
                     Publish
                   </Button>
                 </div>
@@ -441,14 +374,18 @@ export default function Workflows() {
                   onNodesChange={onNodesChange}
                   onEdgesChange={onEdgesChange}
                   onConnect={onConnect}
+                  nodeTypes={nodeTypes}
                   fitView
                 >
                   <Controls />
                   <Background />
                   <Panel position="top-right" className="flex gap-2">
-                    <Button size="sm" onClick={addNode} className="gap-2">
+                    <Button size="sm" onClick={() => addNode('default')} className="gap-2">
                       <Plus className="h-4 w-4" />
                       Add Step
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => addNode('approval')}>
+                      Add Approval
                     </Button>
                   </Panel>
                 </ReactFlow>
@@ -458,6 +395,5 @@ export default function Workflows() {
         </TabsContent>
       </Tabs>
     </DashboardLayout>
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
   );
 }

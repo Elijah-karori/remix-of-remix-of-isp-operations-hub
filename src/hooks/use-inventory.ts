@@ -1,10 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-<<<<<<< HEAD
-import { inventoryApi, apiFetch, procurementApi } from "@/lib/api";
-=======
-import { inventoryApi, apiFetch } from "@/lib/api";
+import { inventoryApi, apiFetch, procurementApi, productsApi } from "@/lib/api";
 import { Product as ApiProduct, Supplier as ApiSupplier, ProductCreate } from "@/types/api";
->>>>>>> 2df108fa25cf4dbfbce67ffbe09ad63f18244f71
 
 // Re-export API types with extended fields for UI
 export type Product = ApiProduct & {
@@ -115,10 +111,7 @@ export function useUpdateProduct() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<ProductCreate> }) =>
-      apiFetch(`/api/v1/inventory/products/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+      inventoryApi.updateProduct(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
     },
@@ -130,7 +123,7 @@ export function useSearchProducts() {
 
   return useMutation({
     mutationFn: ({ query, useScrapers = false, maxResults = 50 }: { query: string; useScrapers?: boolean; maxResults?: number }) =>
-      inventoryApi.searchProducts(query, useScrapers, maxResults),
+      productsApi.search(query, useScrapers, maxResults),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
     },
@@ -186,7 +179,14 @@ export function useInventoryValuation() {
 export function useInventoryTurnoverAnalysis(days = 90) {
   return useQuery({
     queryKey: ["inventory", "turnoverAnalysis", days],
-    queryFn: () => inventoryApi.turnoverAnalysis(days),
+    queryFn: async () => {
+      const data = await inventoryApi.turnoverAnalysis(days) as any[];
+      // Calculate average turnover rate from all products or return summary if available
+      const turnover_rate = data.length > 0
+        ? data.reduce((acc, item) => acc + (item.turnover_ratio || 0), 0) / data.length
+        : 0;
+      return { turnover_rate, items: data };
+    },
     staleTime: 3600000, // 1 hour
   });
 }
@@ -194,7 +194,14 @@ export function useInventoryTurnoverAnalysis(days = 90) {
 export function useInventoryDeadStock(daysThreshold = 90) {
   return useQuery({
     queryKey: ["inventory", "deadStock", daysThreshold],
-    queryFn: () => inventoryApi.deadStock(daysThreshold),
+    queryFn: async () => {
+      const data = await inventoryApi.deadStock(daysThreshold) as any[];
+      const total_dead_stock_value = data.reduce((acc, item) => acc + (item.total_value || 0), 0);
+      return {
+        total_dead_stock_value,
+        dead_stock_items: data
+      };
+    },
     staleTime: 3600000, // 1 hour
   });
 }
@@ -216,7 +223,7 @@ export function useUpdateSupplier() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Supplier> }) =>
       inventoryApi.updateSupplier(id, data),
-    onSuccess: (updatedSupplier) => {
+    onSuccess: (updatedSupplier: any) => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "suppliers"] });
       queryClient.setQueryData(["inventory", "supplier", updatedSupplier.id], updatedSupplier);
     },

@@ -213,7 +213,7 @@ export function ProductsTab() {
                         <TableCell>{product.category || "-"}</TableCell>
                         <TableCell>{product.supplier_name || "-"}</TableCell>
                         <TableCell className="text-right">
-                          KES {product.unit_price.toLocaleString()}
+                          KES {(product.unit_price || 0).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right">
                           {product.quantity_in_stock} / {product.reorder_level}
