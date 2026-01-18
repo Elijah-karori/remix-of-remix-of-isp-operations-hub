@@ -9,7 +9,6 @@ import { Search, Shield, Users, ChevronRight, Loader2, RefreshCw, Plus, Edit, Tr
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { RoleHierarchyOut, IndependentRoleOut, PermissionV2Out, UserOut, AccessPolicyOut } from '@/types/api';
-
 import {
   useMyPermissions,
   useRoleHierarchy,

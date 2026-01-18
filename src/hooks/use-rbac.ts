@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { rbacApi, managementApi, permissionsApi, usersApi } from '@/lib/api';
+import { rbacApi, managementApi, permissionsApi, usersApi, authApi } from '@/lib/api'; // Added authApi
 import {
   PermissionCheckResponse,
   MyPermissionsResponse,
@@ -16,7 +16,17 @@ import { toast } from 'sonner';
 export const useMyPermissions = () => {
   return useQuery<MyPermissionsResponse>({
     queryKey: ['rbac', 'my-permissions'],
-    queryFn: () => rbacApi.myPermissions(),
+    queryFn: async () => {
+      const user = await authApi.me(); // Fetch UserOut object
+      const userPermissionsV2 = user.permissions_v2 || []; // Directly use permissions_v2
+
+      const permissionsForResponse: PermissionDetail[] = userPermissionsV2.map(p => ({
+        codename: p.name, // 'name' from backend is 'hr:create:all'
+        name: p.name,     // 'name' from backend is 'hr:create:all'
+      }));
+
+      return { permissions: permissionsForResponse, count: permissionsForResponse.length };
+    },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 };
