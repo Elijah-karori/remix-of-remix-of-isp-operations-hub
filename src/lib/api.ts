@@ -69,7 +69,7 @@ import {
   MyPermissionsResponse
 } from "../types/api";
 
-export const API_BASE_URL = "http://erp.gygaview.co.ke";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Token management
 let accessToken: string | null = localStorage.getItem("access_token");

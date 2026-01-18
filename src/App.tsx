@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import Tasks from "./pages/Tasks";
 import Finance from "./pages/Finance";
 import Inventory from "./pages/Inventory";
@@ -24,6 +25,9 @@ import Permissions from "./pages/system/permissions";
 import Analytics from "./pages/system/analytics";
 import Audit from "./pages/system/audit";
 import SystemSettings from "./pages/system/settings";
+import TesterCoverage from "./pages/system/TesterCoverage";
+import AuditorHeatmap from "./pages/system/AuditorHeatmap";
+import Marketing from "./pages/Marketing";
 import Leads from "./pages/CRM/Leads";
 import Deals from "./pages/CRM/Deals"; // New import for Deals page
 import Activities from "./pages/CRM/Activities";
@@ -38,6 +42,7 @@ import Ncba from "./pages/Finance/Ncba";       // New import
 import HRIndex from "./pages/HR/Index";
 import Employees from "./pages/HR/Employees";
 import Payroll from "./pages/HR/Payroll";
+import HRComplaints from "./pages/HR/Complaints";
 import TechniciansIndex from "./pages/Technicians/Index";
 
 const queryClient = new QueryClient();
@@ -105,6 +110,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id"
+              element={
+                <ProtectedRoute>
+                  <ProjectDetail />
                 </ProtectedRoute>
               }
             />
@@ -205,6 +218,14 @@ const App = () => (
               }
             />
             <Route
+              path="/hr/complaints"
+              element={
+                <ProtectedRoute>
+                  <HRComplaints />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/technicians"
               element={
                 <ProtectedRoute>
@@ -217,6 +238,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/marketing"
+              element={
+                <ProtectedRoute>
+                  <Marketing />
                 </ProtectedRoute>
               }
             />
@@ -257,6 +286,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <SystemSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/system/tester-coverage"
+              element={
+                <ProtectedRoute>
+                  <TesterCoverage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/system/auditor-heatmap"
+              element={
+                <ProtectedRoute>
+                  <AuditorHeatmap />
                 </ProtectedRoute>
               }
             />
