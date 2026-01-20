@@ -1,18 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useInventoryValuation, useInventoryTurnoverAnalysis, useInventoryDeadStock, useSpendingTrends } from "@/hooks/use-inventory"; // Import useSpendingTrends
+import { useInventoryValuation, useInventoryTurnoverAnalysis, useInventoryDeadStock, useSpendingTrends } from "@/hooks/use-inventory";
+import { SpendingTrendsData } from "@/types/api";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, TrendingUp, TrendingDown, PackageMinus, Scale, DollarSign, History } from "lucide-react"; // Added DollarSign, History
+import { RefreshCw, TrendingUp, PackageMinus, Scale, DollarSign, History } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 export default function AnalyticsTab() {
   const { data: valuation, isLoading: valuationLoading, error: valuationError, refetch: refetchValuation } = useInventoryValuation();
   const { data: turnover, isLoading: turnoverLoading, error: turnoverError, refetch: refetchTurnover } = useInventoryTurnoverAnalysis();
   const { data: deadStock, isLoading: deadStockLoading, error: deadStockError, refetch: refetchDeadStock } = useInventoryDeadStock();
-  const { data: spendingTrends, isLoading: spendingTrendsLoading, error: spendingTrendsError, refetch: refetchSpendingTrends } = useSpendingTrends();
+  const { data: spendingTrendsRaw, isLoading: spendingTrendsLoading, error: spendingTrendsError, refetch: refetchSpendingTrends } = useSpendingTrends();
+  
+  const spendingTrends = spendingTrendsRaw as SpendingTrendsData | undefined;
 
 
   const handleRefreshAll = () => {

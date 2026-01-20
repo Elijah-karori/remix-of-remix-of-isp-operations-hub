@@ -49,7 +49,17 @@ export function LeadForm({ initialData, onSuccess, onCancel }: LeadFormProps) {
 
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      first_name: initialData.first_name,
+      last_name: initialData.last_name,
+      email: initialData.email || '',
+      phone: initialData.phone || '',
+      company: initialData.company || '',
+      status: (initialData.status as any) || 'New',
+      source: '',
+      description: initialData.description || '',
+      owner_id: initialData.owner_id,
+    } : {
       first_name: '',
       last_name: '',
       email: '',
@@ -64,7 +74,7 @@ export function LeadForm({ initialData, onSuccess, onCancel }: LeadFormProps) {
 
   useEffect(() => {
     if (initialData) {
-      form.reset(initialData);
+      form.reset(initialData as any);
     }
   }, [initialData, form]);
 

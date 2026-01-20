@@ -25,7 +25,7 @@ const projectFormSchema = z.object({
   customer_name: z.string().min(1, { message: 'Customer name is required.' }),
   customer_email: z.string().email({ message: 'Invalid email address.' }),
   customer_phone: z.string().min(10, { message: 'Phone number must be at least 10 characters.' }),
-  infrastructure_type: z.enum(["fiber", "wireless", "ppoe", "hotspot", "hybrid", "network_infrastructure"], {
+  infrastructure_type: z.enum(["fiber", "wireless", "ppoe", "hotspot", "hybrid"], {
     required_error: "Infrastructure type is required.",
   }),
   status: z.enum(["planning", "in_progress", "completed", "on_hold", "cancelled"], {
@@ -34,11 +34,11 @@ const projectFormSchema = z.object({
   priority: z.enum(["low", "medium", "high", "critical"], {
     required_error: "Priority is required.",
   }),
-  budget: z.coerce.number().min(0, { message: "Budget must be a non-negative number." }),
+  budget: z.string().optional(),
   start_date: z.date({ required_error: "Start date is required." }),
   end_date: z.date().optional(),
   location: z.string().optional(),
-  project_type: z.string().optional(),
+  project_type: z.enum(["apartment", "single_home", "commercial"]).optional(),
 });
 
 interface ProjectFormProps {
@@ -60,10 +60,10 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ onSuccess, onCancel })
       infrastructure_type: "fiber", // Default value
       status: "planning", // Default value
       priority: "medium", // Default value
-      budget: 0,
+      budget: '',
       start_date: new Date(),
       location: '',
-      project_type: '',
+      project_type: undefined,
     },
   });
 
@@ -71,18 +71,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ onSuccess, onCancel })
     try {
       const projectData: ProjectCreate = {
         name: values.name,
-        description: values.description,
-        customer_name: values.customer_name,
-        customer_email: values.customer_email,
-        customer_phone: values.customer_phone,
-        infrastructure_type: values.infrastructure_type,
+        project_type: values.project_type,
         status: values.status,
         priority: values.priority,
-        budget: values.budget,
-        start_date: format(values.start_date, 'yyyy-MM-dd'),
-        end_date: values.end_date ? format(values.end_date, 'yyyy-MM-dd') : undefined,
-        location: values.location,
-        project_type: values.project_type,
+        infrastructure_type: values.infrastructure_type,
+        budget: values.budget || undefined,
       };
       await createProjectMutation.mutateAsync(projectData);
       toast.success('Project created successfully!');
@@ -165,7 +158,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ onSuccess, onCancel })
                   <SelectItem value="ppoe">PPOE</SelectItem>
                   <SelectItem value="hotspot">Hotspot</SelectItem>
                   <SelectItem value="hybrid">Hybrid</SelectItem>
-                  <SelectItem value="network_infrastructure">Network Infrastructure</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

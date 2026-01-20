@@ -47,7 +47,15 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
 
   const form = useForm<DealFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      name: initialData.name,
+      amount: initialData.amount || initialData.value || 0,
+      stage: (initialData.stage as any) || 'Prospecting',
+      close_date: initialData.close_date || initialData.expected_close_date,
+      lead_id: initialData.lead_id,
+      owner_id: initialData.owner_id,
+      description: initialData.description || '',
+    } : {
       name: '',
       amount: 0,
       stage: 'Prospecting',
@@ -60,7 +68,7 @@ export function DealForm({ initialData, onSuccess, onCancel }: DealFormProps) {
 
   useEffect(() => {
     if (initialData) {
-      form.reset(initialData);
+      form.reset(initialData as any);
     }
   }, [initialData, form]);
 

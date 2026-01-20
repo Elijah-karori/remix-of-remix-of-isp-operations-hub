@@ -23,15 +23,22 @@ const purchaseOrderFormSchema = z.object({
 interface PurchaseOrderFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  initialItem?: string;
+  initialQuantity?: number;
 }
 
-export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ onSuccess, onCancel }) => {
+export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ 
+  onSuccess, 
+  onCancel,
+  initialItem = '',
+  initialQuantity = 1,
+}) => {
   const form = useForm<z.infer<typeof purchaseOrderFormSchema>>({
     resolver: zodResolver(purchaseOrderFormSchema),
     defaultValues: {
       supplier: '',
-      item: '',
-      quantity: 1,
+      item: initialItem,
+      quantity: initialQuantity,
       notes: '',
     },
   });

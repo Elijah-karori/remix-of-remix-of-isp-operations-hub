@@ -1,4 +1,5 @@
-import { useLowStockItems, useReorderPredictions, useAutoReorderProduct } from "@/hooks/use-inventory"; // Import useReorderPredictions and useAutoReorderProduct
+import { useLowStockItems, useReorderPredictions, useAutoReorderProduct } from "@/hooks/use-inventory";
+import { ReorderPrediction } from "@/types/api";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,17 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle, ShoppingCart, RefreshCw, Download, Zap, CalendarDays } from "lucide-react"; // Added Zap and CalendarDays
+import { AlertTriangle, ShoppingCart, RefreshCw, Download, Zap, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { exportToExcel } from "@/lib/export";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { PurchaseOrderForm } from "@/components/dashboard/forms/PurchaseOrderForm"; // Import PurchaseOrderForm
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { PurchaseOrderForm } from "@/components/dashboard/forms/PurchaseOrderForm";
 
 export function LowStockTab() {
   const { data: lowStockItems, isLoading, error, refetch } = useLowStockItems();
-  const { data: reorderPredictions, isLoading: loadingPredictions, error: predictionsError } = useReorderPredictions(); // Fetch reorder predictions
-  const autoReorderMutation = useAutoReorderProduct(); // Auto reorder mutation
+  const { data: reorderPredictions, isLoading: loadingPredictions, error: predictionsError } = useReorderPredictions();
+  const autoReorderMutation = useAutoReorderProduct();
 
   const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
   const [productToOrder, setProductToOrder] = useState<{ id: number; name: string; quantity: number } | null>(null);
@@ -138,12 +139,12 @@ export function LowStockTab() {
         </CardHeader>
         <CardContent>
           {loadingPredictions ? (
-            <LoadingSkeleton variant="inline" />
+            <LoadingSkeleton variant="stat" />
           ) : predictionsError ? (
             <ErrorState message="Failed to load reorder predictions" onRetry={() => {}} />
-          ) : reorderPredictions && reorderPredictions.length > 0 ? (
+          ) : reorderPredictions && (reorderPredictions as ReorderPrediction[]).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {reorderPredictions.map((prediction: any) => (
+              {(reorderPredictions as ReorderPrediction[]).map((prediction) => (
                 <div key={prediction.product_id} className="border p-4 rounded-lg">
                   <p className="font-medium">{prediction.product_name}</p>
                   <p className="text-sm text-muted-foreground">SKU: {prediction.sku}</p>
@@ -253,7 +254,8 @@ export function LowStockTab() {
             <PurchaseOrderForm
               onSuccess={handlePurchaseOrderSuccess}
               onCancel={handlePurchaseOrderCancel}
-              initialData={{ item: productToOrder.name, quantity: productToOrder.quantity }}
+              initialItem={productToOrder.name}
+              initialQuantity={productToOrder.quantity}
             />
           )}
         </DialogContent>

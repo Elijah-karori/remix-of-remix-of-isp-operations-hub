@@ -186,12 +186,11 @@ export function ProductsTab() {
         const createPayload: ProductCreate = {
           name: values.name,
           sku: values.sku,
-          description: values.description,
           category: values.category,
-          price: values.unit_price,
-          quantity_on_hand: values.quantity_in_stock,
+          unit_price: values.unit_price,
+          quantity_in_stock: values.quantity_in_stock,
           reorder_level: values.reorder_level,
-          supplier_id: values.supplier_id,
+          supplier_id: values.supplier_id || 0,
           is_active: values.is_active,
         };
         await createProductMutation.mutateAsync(createPayload);

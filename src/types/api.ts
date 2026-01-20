@@ -299,6 +299,7 @@ export interface ProductCreate {
   reorder_level?: number;
   low_inventory_threshold?: number;
   is_empty_product?: boolean;
+  is_active?: boolean;
   tr069_serial_number?: string;
   tr069_mac_address?: string;
   specifications?: Record<string, any>;
@@ -315,6 +316,28 @@ export interface ProductUpdate {
   reorder_level?: number;
   low_inventory_threshold?: number;
   is_empty_product?: boolean;
+  is_active?: boolean;
+  tr069_serial_number?: string;
+  tr069_mac_address?: string;
+  specifications?: Record<string, any>;
+  image_url?: string;
+}
+
+// Product with backend field names (alias)
+export interface Product {
+  id: ID;
+  supplier_id: ID;
+  supplier?: Supplier;
+  name: string;
+  sku: string;
+  description?: string;
+  category?: string;
+  price: number;
+  quantity_on_hand: number;
+  reorder_level: number;
+  low_inventory_threshold?: number;
+  is_empty_product?: boolean;
+  is_active?: boolean;
   tr069_serial_number?: string;
   tr069_mac_address?: string;
   specifications?: Record<string, any>;
@@ -791,7 +814,10 @@ export interface WorkflowInstanceOut {
 }
 
 // --- CRM & Leads ---
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'unqualified';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'unqualified' | 'New' | 'Contacted' | 'Qualified' | 'Unqualified';
+export type ActivityType = 'Call' | 'Meeting' | 'Email' | 'Task';
+export type ActivityStatus = 'Pending' | 'Completed' | 'Cancelled';
+export type DealStage = 'Prospecting' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Closed Won' | 'Closed Lost' | 'prospecting' | 'negotiation' | 'closed_won' | 'closed_lost';
 
 export interface LeadOut {
   id: ID;
@@ -804,7 +830,35 @@ export interface LeadOut {
   status: LeadStatus;
   rating?: number;
   assigned_to_id?: ID;
+  description?: string;
+  owner_id?: ID;
   created_at: DateString;
+}
+
+export type Lead = LeadOut;
+
+export interface LeadCreate {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  status?: LeadStatus;
+  source?: string;
+  description?: string;
+  owner_id?: ID;
+}
+
+export interface LeadUpdate {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  status?: LeadStatus;
+  source?: string;
+  description?: string;
+  owner_id?: ID;
 }
 
 export interface DealOut {
@@ -812,9 +866,69 @@ export interface DealOut {
   lead_id: ID;
   name: string;
   value: number;
-  stage: 'prospecting' | 'negotiation' | 'closed_won' | 'closed_lost';
-  probability: number; // 0-100
+  amount?: number;
+  stage: DealStage;
+  probability: number;
   expected_close_date?: DateString;
+  close_date?: DateString;
+  owner_id?: ID;
+  description?: string;
+}
+
+export type Deal = DealOut;
+
+export interface DealCreate {
+  name: string;
+  amount: number;
+  stage: DealStage;
+  close_date?: string;
+  lead_id?: ID;
+  owner_id?: ID;
+  description?: string;
+}
+
+export interface DealUpdate {
+  name?: string;
+  amount?: number;
+  stage?: DealStage;
+  close_date?: string;
+  lead_id?: ID;
+  owner_id?: ID;
+  description?: string;
+}
+
+export interface ActivityOut {
+  id: ID;
+  activity_type: ActivityType;
+  due_date?: DateString;
+  status: ActivityStatus;
+  notes?: string;
+  lead_id?: ID;
+  deal_id?: ID;
+  assigned_to_id?: ID;
+  created_at: DateString;
+}
+
+export type Activity = ActivityOut;
+
+export interface ActivityCreate {
+  activity_type: ActivityType;
+  due_date?: string;
+  status?: ActivityStatus;
+  notes?: string;
+  lead_id?: ID;
+  deal_id?: ID;
+  assigned_to_id?: ID;
+}
+
+export interface ActivityUpdate {
+  activity_type?: ActivityType;
+  due_date?: string;
+  status?: ActivityStatus;
+  notes?: string;
+  lead_id?: ID;
+  deal_id?: ID;
+  assigned_to_id?: ID;
 }
 
 // --- Audit Logs ---
@@ -822,10 +936,40 @@ export interface AuditLogOut {
   id: ID;
   user_id?: ID;
   user_email?: string;
-  action: string; // e.g., 'create', 'delete', 'login'
-  resource: string; // e.g., 'project', 'user'
+  action: string;
+  resource: string;
   resource_id?: string;
   ip_address?: string;
-  details?: Record<string, any>; // JSON diff or metadata
+  details?: Record<string, any>;
   created_at: DateString;
+}
+
+// --- Type Aliases ---
+export type Invoice = InvoiceOut;
+export type MasterBudget = MasterBudgetOut;
+export type SubBudget = SubBudgetOut;
+export type BudgetUsage = BudgetUsageOut;
+
+// --- Spending Trends ---
+export interface SpendingTrendsData {
+  total_spent: number;
+  average_monthly_spend: number;
+  items: Array<{
+    group_id?: string;
+    group_name?: string;
+    supplier_id?: number;
+    supplier_name?: string;
+    month?: string;
+    total_spent: number;
+    items_count: number;
+  }>;
+}
+
+// --- Reorder Predictions ---
+export interface ReorderPrediction {
+  product_id: number;
+  product_name: string;
+  sku: string;
+  predicted_reorder_date: string;
+  suggested_quantity: number;
 }

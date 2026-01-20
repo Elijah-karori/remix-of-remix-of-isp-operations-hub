@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BudgetUsage, BudgetUsageCreate, BudgetUsageUpdate } from '@/types/api';
+import { BudgetUsageOut, BudgetUsageCreate, BudgetUsageUpdate } from '@/types/api';
 import { useCreateBudgetUsage, useUpdateBudgetUsage } from '@/hooks/use-finance';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '../ui/loading-spinner';
@@ -29,11 +29,11 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
-import { useSubBudgets } from '@/hooks/use-finance'; // To fetch sub-budgets
+import { useSubBudgets } from '@/hooks/use-finance';
 
 interface BudgetUsageFormProps {
-  subBudgetId?: number; // Optional, if creating from a master budget context
-  initialData?: BudgetUsage;
+  subBudgetId?: number;
+  initialData?: BudgetUsageOut;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -42,8 +42,9 @@ const formSchema = z.object({
   sub_budget_id: z.coerce.number().int().min(1, 'Sub-budget is required.'),
   description: z.string().min(1, 'Description is required.'),
   amount: z.coerce.number().min(0, 'Amount must be non-negative.'),
-  date: z.date({ required_error: "Date is required." }),
-  status: z.enum(['Pending', 'Approved', 'Rejected']),
+  transaction_date: z.date({ required_error: "Date is required." }),
+  type: z.enum(['expense', 'allocation', 'adjustment']).default('expense'),
+  status: z.enum(['approved', 'pending', 'rejected']),
 });
 
 type BudgetUsageFormValues = z.infer<typeof formSchema>;
@@ -58,22 +59,31 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
   const form = useForm<BudgetUsageFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
-      ...initialData,
-      date: new Date(initialData.date),
+      sub_budget_id: initialData.sub_budget_id,
+      description: initialData.description,
+      amount: initialData.amount,
+      transaction_date: new Date(initialData.transaction_date),
+      type: initialData.type || 'expense',
+      status: initialData.status,
     } : {
       sub_budget_id: subBudgetId || undefined,
       description: '',
       amount: 0,
-      date: new Date(),
-      status: 'Pending',
+      transaction_date: new Date(),
+      type: 'expense',
+      status: 'pending',
     },
   });
 
   useEffect(() => {
     if (initialData) {
       form.reset({
-        ...initialData,
-        date: new Date(initialData.date),
+        sub_budget_id: initialData.sub_budget_id,
+        description: initialData.description,
+        amount: initialData.amount,
+        transaction_date: new Date(initialData.transaction_date),
+        type: initialData.type || 'expense',
+        status: initialData.status,
       });
     }
   }, [initialData, form]);
@@ -83,9 +93,12 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
 
   const onSubmit = async (values: BudgetUsageFormValues) => {
     try {
-      const usageData = {
-        ...values,
-        date: format(values.date, 'yyyy-MM-dd'),
+      const usageData: BudgetUsageCreate = {
+        sub_budget_id: values.sub_budget_id,
+        description: values.description,
+        amount: values.amount,
+        type: values.type,
+        transaction_date: format(values.transaction_date, 'yyyy-MM-dd'),
       };
 
       if (isEditing) {
@@ -96,7 +109,7 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
         await updateUsageMutation.mutateAsync({ id: initialData.id, data: usageData as BudgetUsageUpdate });
         toast.success('Budget Usage updated successfully!');
       } else {
-        await createUsageMutation.mutateAsync(usageData as BudgetUsageCreate);
+        await createUsageMutation.mutateAsync(usageData);
         toast.success('Budget Usage created successfully!');
       }
       onSuccess();
@@ -164,7 +177,7 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
         />
         <FormField
           control={form.control}
-          name="date"
+          name="transaction_date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Date</FormLabel>
@@ -213,9 +226,9 @@ export function BudgetUsageForm({ subBudgetId, initialData, onSuccess, onCancel 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
