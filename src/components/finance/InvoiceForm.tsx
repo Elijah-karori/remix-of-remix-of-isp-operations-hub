@@ -20,14 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Invoice, InvoiceCreate, InvoiceUpdate } from '@/types/api';
+import { InvoiceOut, InvoiceCreate, InvoiceUpdate } from '@/types/api';
 import { useGenerateInvoice, useUpdateInvoice } from '@/hooks/use-finance';
 import { toast } from 'sonner';
 import { Trash2, PlusCircle } from 'lucide-react'; // New icons
 import { cn } from '@/lib/utils'; // Added cn for conditional classnames
 
 interface InvoiceFormProps {
-  initialData?: Invoice;
+  initialData?: InvoiceOut;
   onSuccess: () => void;
   onCancel: () => void;
 }

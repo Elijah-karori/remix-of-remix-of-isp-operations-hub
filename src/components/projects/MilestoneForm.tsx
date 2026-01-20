@@ -24,7 +24,7 @@ import { format } from "date-fns";
 const milestoneFormSchema = z.object({
   name: z.string().min(1, { message: "Milestone name is required." }),
   due_date: z.date({ required_error: "Due date is required." }),
-  status: z.enum(["pending", "in_progress", "completed", "on_hold"], {
+  status: z.enum(["pending", "in_progress", "completed", "delayed"], {
     required_error: "Status is required.",
   }),
   progress: z.coerce.number().min(0).max(100, { message: "Progress must be between 0 and 100." }),
@@ -60,18 +60,20 @@ export function MilestoneForm({ projectId, initialData, onSuccess, onCancel }: M
         await updateMilestoneMutation.mutateAsync({
           milestoneId: initialData.id,
           data: {
-            ...values,
-            due_date: format(values.due_date, "yyyy-MM-dd"), // Format date for API
-          },
+            name: values.name,
+            status: values.status,
+            progress: values.progress,
+            due_date: format(values.due_date, "yyyy-MM-dd"),
+          } as any,
         });
         toast.success("Milestone updated successfully!");
       } else {
         await createMilestoneMutation.mutateAsync({
           projectId,
           data: {
-            ...values,
-            due_date: format(values.due_date, "yyyy-MM-dd"), // Format date for API
-          },
+            name: values.name,
+            due_date: format(values.due_date, "yyyy-MM-dd"),
+          } as any,
         });
         toast.success("Milestone created successfully!");
       }
@@ -152,7 +154,7 @@ export function MilestoneForm({ projectId, initialData, onSuccess, onCancel }: M
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on_hold">On Hold</SelectItem>
+                  <SelectItem value="delayed">Delayed</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

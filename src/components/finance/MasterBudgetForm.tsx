@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MasterBudget, MasterBudgetCreate, MasterBudgetUpdate } from '@/types/api';
+import { MasterBudgetOut, MasterBudgetCreate, MasterBudgetUpdate } from '@/types/api';
 import { useCreateMasterBudget, useUpdateMasterBudget } from '@/hooks/use-finance';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '../ui/loading-spinner';
@@ -31,7 +31,7 @@ import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 
 interface MasterBudgetFormProps {
-  initialData?: MasterBudget;
+  initialData?: MasterBudgetOut;
   onSuccess: () => void;
   onCancel: () => void;
 }

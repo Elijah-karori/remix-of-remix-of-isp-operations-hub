@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SubBudget, SubBudgetCreate, SubBudgetUpdate } from '@/types/api';
+import { SubBudgetOut, SubBudgetCreate, SubBudgetUpdate } from '@/types/api';
 import { useCreateSubBudget, useUpdateSubBudget } from '@/hooks/use-finance';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '../ui/loading-spinner';
@@ -32,7 +32,7 @@ import { cn } from '@/lib/utils';
 
 interface SubBudgetFormProps {
   masterBudgetId: number;
-  initialData?: SubBudget;
+  initialData?: SubBudgetOut;
   onSuccess: () => void;
   onCancel: () => void;
 }

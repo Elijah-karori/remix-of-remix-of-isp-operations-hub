@@ -79,9 +79,10 @@ export function StatCard({
             </div>
           )}
         </div>
-                            <div className={cn("p-3 rounded-xl", iconStyles[variant as keyof typeof iconStyles])}>
-                              {Icon && <Icon className="w-5 h-5" />}
-                            </div>      </div>
+        <div className={cn("p-3 rounded-xl", iconStyles[variant as keyof typeof iconStyles])}>
+          {Icon && (typeof Icon === 'function' ? <Icon className="w-5 h-5" /> : Icon)}
+        </div>
+      </div>
     </div>
   );
 }

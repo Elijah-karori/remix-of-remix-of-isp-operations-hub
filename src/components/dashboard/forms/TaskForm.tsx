@@ -27,14 +27,14 @@ const taskFormSchema = z.object({
   project_id: z.coerce.number().int().optional().refine(val => val === undefined || val > 0, {
     message: "Project is required.",
   }),
-  assigned_to_user_id: z.coerce.number().int().optional().refine(val => val === undefined || val > 0, {
+  assigned_to_id: z.coerce.number().int().optional().refine(val => val === undefined || val > 0, {
     message: "Assignee is required.",
   }),
-  due_date: z.date().optional(),
-  status: z.enum(["todo", "in_progress", "done", "blocked"], {
+  scheduled_date: z.date().optional(),
+  status: z.enum(["pending", "in_progress", "awaiting_approval", "completed", "cancelled"], {
     required_error: "Status is required.",
-  }).default("todo"),
-  priority: z.enum(["low", "medium", "high", "urgent"], {
+  }).default("pending"),
+  priority: z.enum(["low", "medium", "high", "critical"], {
     required_error: "Priority is required.",
   }).default("medium"),
 });
@@ -42,13 +42,13 @@ const taskFormSchema = z.object({
 interface TaskFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
-  initialData?: Partial<TaskCreate>; // For editing purposes if needed later
+  initialData?: Partial<TaskCreate>;
 }
 
 export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel, initialData }) => {
   const createTaskMutation = useCreateTask();
-  const { data: projectsData, isLoading: loadingProjects } = useProjects(); // Fetch projects
-  const { data: usersData, isLoading: loadingUsers } = useUsers(); // Fetch users
+  const { data: projectsData, isLoading: loadingProjects } = useProjects();
+  const { data: usersData, isLoading: loadingUsers } = useUsers();
 
   const form = useForm<z.infer<typeof taskFormSchema>>({
     resolver: zodResolver(taskFormSchema),
@@ -56,9 +56,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel, initial
       title: initialData?.title || '',
       description: initialData?.description || '',
       project_id: initialData?.project_id || undefined,
-      assigned_to_user_id: initialData?.assigned_to_user_id || undefined,
-      due_date: initialData?.due_date ? new Date(initialData.due_date) : undefined,
-      status: initialData?.status || "todo",
+      assigned_to_id: initialData?.assigned_to_id || undefined,
+      scheduled_date: initialData?.scheduled_date ? new Date(initialData.scheduled_date) : undefined,
+      status: initialData?.status || "pending",
       priority: initialData?.priority || "medium",
     },
   });
@@ -69,8 +69,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel, initial
         title: values.title,
         description: values.description,
         project_id: values.project_id,
-        assigned_to_user_id: values.assigned_to_user_id,
-        due_date: values.due_date ? format(values.due_date, 'yyyy-MM-dd') : undefined,
+        assigned_to_id: values.assigned_to_id,
+        scheduled_date: values.scheduled_date ? format(values.scheduled_date, 'yyyy-MM-dd') : undefined,
         status: values.status,
         priority: values.priority,
       };
@@ -141,7 +141,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel, initial
         />
         <FormField
           control={form.control}
-          name="assigned_to_user_id"
+          name="assigned_to_id"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Assigned To</FormLabel>
@@ -169,10 +169,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel, initial
         />
         <FormField
           control={form.control}
-          name="due_date"
+          name="scheduled_date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Due Date (Optional)</FormLabel>
+              <FormLabel>Scheduled Date (Optional)</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -219,10 +219,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel, initial
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="todo">To Do</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
-                  <SelectItem value="blocked">Blocked</SelectItem>
+                  <SelectItem value="awaiting_approval">Awaiting Approval</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -245,7 +246,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onSuccess, onCancel, initial
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
