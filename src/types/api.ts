@@ -13,13 +13,19 @@ export interface User {
   email: string;
   full_name: string;
   phone?: string;
+  phone_number?: string;
   is_active: boolean;
   is_superuser: boolean;
   roles: Role[]; // Old RBAC structure
   roles_v2?: RoleV2Out[]; // New RBAC structure
+  permissions_v2?: Array<{ name: string }>; // V2 permissions
   menus?: MenuItem[]; // Dynamic frontend navigation
+  department_id?: ID;
   created_at: DateString;
 }
+
+// Type alias for backward compatibility
+export type UserOut = User;
 
 export interface UserCreate {
   email: string;
@@ -553,8 +559,30 @@ export interface FinancialAccountUpdate {
 }
 
 // Budget types
-export type MasterBudgetStatus = 'active' | 'inactive' | 'completed';
+// Form uses capitalized values, API may return lowercase - handle both
+export type MasterBudgetStatus = 'active' | 'inactive' | 'completed' | 'Active' | 'Inactive' | 'Completed' | 'Planned' | 'Archived';
 export type SubBudgetType = string; // e.g., 'Operational', 'Marketing', 'Project'
+
+// Project Financials types
+export interface BudgetSummary {
+  project_id: ID;
+  total_budget: number;
+  total_allocated: number;
+  total_spent: number;
+  remaining: number;
+  percent_used: number;
+  by_category?: Record<string, number>;
+}
+
+export interface ProjectFinancialsOut {
+  project_id: ID;
+  total_revenue: number;
+  total_cost: number;
+  gross_profit: number;
+  net_profit: number;
+  profit_margin: number;
+  details?: Record<string, any>;
+}
 export type BudgetUsageType = 'expense' | 'allocation' | 'adjustment';
 export type BudgetUsageStatus = 'approved' | 'pending' | 'rejected';
 
@@ -593,9 +621,11 @@ export interface SubBudgetOut {
   name: SubBudgetType;
   category: string;
   allocated_amount: number;
-  spent_amount?: number;
+  spent_amount: number;
   remaining_amount?: number;
-  status: MasterBudgetStatus; // Should be sub-budget status
+  status: MasterBudgetStatus;
+  start_date?: DateString;
+  end_date?: DateString;
   created_at: DateString;
   updated_at?: DateString;
 }
@@ -973,3 +1003,166 @@ export interface ReorderPrediction {
   predicted_reorder_date: string;
   suggested_quantity: number;
 }
+
+// --- Additional Types for API Compatibility ---
+// Employee & HR
+export type EmployeeProfileResponse = EmployeeProfileOut;
+export type PayoutResponse = PayoutOut;
+
+// Workflow aliases
+export type WorkflowDefinitionRead = WorkflowDefinitionOut;
+export type WorkflowInstanceRead = WorkflowInstanceOut;
+
+// Technician types
+export interface TechnicianKPI {
+  technician_id: ID;
+  total_tasks: number;
+  completed_tasks: number;
+  on_time_percentage: number;
+  average_rating: number;
+}
+
+export interface CustomerSatisfaction {
+  technician_id: ID;
+  rating: number;
+  feedback?: string;
+  task_id?: ID;
+}
+
+// Rate Card types
+export interface RateCardResponse {
+  id: ID;
+  engagement_type: EngagementType;
+  base_rate: number;
+  currency: string;
+  effective_date: DateString;
+}
+
+export interface RateCardCreate {
+  engagement_type: EngagementType;
+  base_rate: number;
+  currency?: string;
+  effective_date?: DateString;
+}
+
+// Complaint types
+export interface ComplaintResponse {
+  id: ID;
+  employee_id: ID;
+  complainant_id?: ID;
+  description: string;
+  status: 'open' | 'investigating' | 'resolved' | 'closed';
+  created_at: DateString;
+}
+
+export interface ComplaintCreate {
+  employee_id: ID;
+  description: string;
+  complainant_id?: ID;
+}
+
+// Workflow Graph
+export interface WorkflowGraphCreate {
+  nodes: ReactFlowNode[];
+  edges: ReactFlowEdge[];
+}
+
+// Scraper types
+export interface ScraperRun {
+  id: ID;
+  supplier_id: ID;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  started_at?: DateString;
+  completed_at?: DateString;
+  items_found: number;
+}
+
+export interface PriceHistory {
+  product_id: ID;
+  supplier_id: ID;
+  price: number;
+  recorded_at: DateString;
+}
+
+// Role hierarchy aliases
+export type RoleHierarchyOut = RoleHierarchy;
+
+export interface IndependentRoleOut {
+  id: ID;
+  name: string;
+  description?: string;
+  is_independent: boolean;
+}
+
+export interface FuzzyMatchResult {
+  role_id: ID;
+  role_name: string;
+  score: number;
+  suggested_parent_id?: ID;
+}
+
+// Access Policy types
+export interface AccessPolicyOut {
+  id: ID;
+  name: string;
+  resource: string;
+  actions: string[];
+  conditions?: Record<string, any>;
+}
+
+export interface AccessPolicyCreate {
+  name: string;
+  resource: string;
+  actions: string[];
+  conditions?: Record<string, any>;
+}
+
+export interface AccessPolicyUpdate {
+  name?: string;
+  resource?: string;
+  actions?: string[];
+  conditions?: Record<string, any>;
+}
+
+export interface FeaturePolicyRequest {
+  feature: string;
+  action: string;
+}
+
+// User Status
+export type UserStatus = 'active' | 'suspended' | 'inactive';
+
+export interface UserStatusUpdateRequest {
+  status: UserStatus;
+  reason?: string;
+}
+
+// Marketing
+export interface MarketingCampaignOut {
+  id: ID;
+  name: string;
+  description?: string;
+  status: 'draft' | 'active' | 'paused' | 'completed';
+  budget?: number;
+  start_date?: DateString;
+  end_date?: DateString;
+  created_at: DateString;
+}
+
+// RBAC Permission V2
+export interface PermissionV2Out {
+  id: ID;
+  codename: string;
+  name: string;
+  resource?: string;
+  action?: string;
+}
+
+// Additional type aliases for backward compatibility in api.ts
+export type EmployeeProfileResponse = EmployeeProfileOut;
+export type PayoutResponse = PayoutOut;
+export type WorkflowDefinitionRead = WorkflowDefinitionOut;
+export type WorkflowInstanceRead = WorkflowInstanceOut;
+export type RoleHierarchyOut = RoleHierarchy;
+export type CampaignOut = MarketingCampaignOut;
+export type InvoiceItem = InvoiceItemOut;

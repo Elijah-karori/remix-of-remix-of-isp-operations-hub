@@ -44,7 +44,7 @@ const formSchema = z.object({
   spent_amount: z.coerce.number().min(0, 'Spent amount must be non-negative.').optional(),
   start_date: z.date({ required_error: "Start date is required." }),
   end_date: z.date({ required_error: "End date is required." }),
-  status: z.enum(['Planned', 'Active', 'Completed', 'Archived']),
+  status: z.string(),
   category: z.string().min(1, 'Category is required.'),
 });
 
@@ -55,32 +55,29 @@ export function SubBudgetForm({ masterBudgetId, initialData, onSuccess, onCancel
 
   const form = useForm<SubBudgetFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData ? {
-      ...initialData,
-      allocated_amount: initialData.allocated_amount || 0,
-      spent_amount: initialData.spent_amount || 0,
-      start_date: new Date(initialData.start_date),
-      end_date: new Date(initialData.end_date),
-    } : {
-      name: '',
+    defaultValues: {
+      name: initialData?.name || '',
       description: '',
-      allocated_amount: 0,
-      spent_amount: 0,
-      start_date: new Date(),
-      end_date: new Date(new Date().setMonth(new Date().getMonth() + 3)), // 3 months from now
-      status: 'Planned',
-      category: '',
+      allocated_amount: initialData?.allocated_amount || 0,
+      spent_amount: initialData?.spent_amount || 0,
+      start_date: initialData?.start_date ? new Date(initialData.start_date) : new Date(),
+      end_date: initialData?.end_date ? new Date(initialData.end_date) : new Date(new Date().setMonth(new Date().getMonth() + 3)),
+      status: initialData?.status || 'Planned',
+      category: initialData?.category || '',
     },
   });
 
   useEffect(() => {
     if (initialData) {
       form.reset({
-        ...initialData,
+        name: initialData.name,
+        description: '',
         allocated_amount: initialData.allocated_amount || 0,
         spent_amount: initialData.spent_amount || 0,
-        start_date: new Date(initialData.start_date),
-        end_date: new Date(initialData.end_date),
+        start_date: initialData.start_date ? new Date(initialData.start_date) : new Date(),
+        end_date: initialData.end_date ? new Date(initialData.end_date) : new Date(new Date().setMonth(new Date().getMonth() + 3)),
+        status: initialData.status || 'Planned',
+        category: initialData.category || '',
       });
     }
   }, [initialData, form]);
@@ -101,10 +98,11 @@ export function SubBudgetForm({ masterBudgetId, initialData, onSuccess, onCancel
           toast.error("Error: Sub-budget ID is missing for update operation.");
           return;
         }
-        await updateSubBudgetMutation.mutateAsync({ id: initialData.id, data: subBudgetData as SubBudgetUpdate });
+        await updateSubBudgetMutation.mutateAsync({ id: initialData.id, data: subBudgetData as unknown as SubBudgetUpdate });
         toast.success('Sub-budget updated successfully!');
       } else {
-        await createSubBudgetMutation.mutateAsync({ masterBudgetId, data: subBudgetData as SubBudgetCreate });
+        const createData = { ...subBudgetData, master_budget_id: masterBudgetId };
+        await createSubBudgetMutation.mutateAsync({ masterBudgetId, data: createData as unknown as SubBudgetCreate });
         toast.success('Sub-budget created successfully!');
       }
       onSuccess();

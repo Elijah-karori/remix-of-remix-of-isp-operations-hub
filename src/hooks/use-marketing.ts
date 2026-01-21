@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { marketingApi } from "@/lib/api";
-import { CampaignOut } from "@/types/api";
+import { MarketingCampaignOut } from "@/types/api";
 
 export function useCampaigns() {
-  return useQuery<CampaignOut[]>({
+  return useQuery<MarketingCampaignOut[]>({
     queryKey: ["marketingCampaigns"],
-    queryFn: () => marketingApi.listCampaigns(),
-    staleTime: 60000, // Cache for 1 minute
+    queryFn: () => marketingApi.listCampaigns() as Promise<MarketingCampaignOut[]>,
+    staleTime: 60000,
   });
 }
 
