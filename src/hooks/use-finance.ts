@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { financeApi, mpesaApi, ncbaApi } from '@/lib/api'; // Added mpesaApi, ncbaApi
+import { financeApi, mpesaApi, ncbaApi } from '@/lib/api';
 import {
   MasterBudget, MasterBudgetCreate, MasterBudgetUpdate,
   SubBudget, SubBudgetCreate, SubBudgetUpdate,
@@ -8,7 +8,8 @@ import {
   Invoice, InvoiceCreate, InvoiceUpdate,
   FinancialAccount, FinancialAccountCreate, FinancialAccountUpdate,
   ProfitabilityReportResponse, InfrastructureProfitabilityResponse,
-  MpesaTransactionOut, MpesaC2BRequest, MpesaSTKPushRequest, MpesaQRCodeRequest, MpesaB2CRequest, MpesaB2BRequest, MpesaTaxRemittanceRequest, MpesaRatibaCreate, MpesaTransactionStatusRequest, MpesaReverseTransactionRequest, NcbaPayRequest // Added M-Pesa & NCBA types
+  MpesaTransactionOut, MpesaC2BRequest, MpesaSTKPushRequest, MpesaQRCodeRequest, MpesaB2CRequest, MpesaB2BRequest, MpesaTaxRemittanceRequest, MpesaRatibaCreate, MpesaTransactionStatusRequest, MpesaReverseTransactionRequest, NcbaPayRequest,
+  BOMVarianceOut, BudgetSummary, ProjectFinancialsOut, FinancialSnapshotResponse
 } from '@/types/api';
 import { toast } from 'sonner';
 

@@ -13,10 +13,10 @@ import {
   Product,
   ProductCreate,
   Supplier,
-  EmployeeProfileResponse,
-  PayoutResponse,
-  WorkflowDefinitionRead,
-  WorkflowInstanceRead,
+  EmployeeProfileOut,
+  PayoutOut,
+  WorkflowDefinitionOut,
+  WorkflowInstanceOut,
   FinancialAccount,
   FinancialAccountCreate,
   FinancialAccountUpdate,
@@ -34,7 +34,7 @@ import {
   ProfitabilityReportResponse,
   ScraperRun,
   PriceHistory,
-  RoleHierarchyOut,
+  RoleHierarchy,
   IndependentRoleOut,
   FuzzyMatchResult,
   AccessPolicyOut,
@@ -66,7 +66,11 @@ import {
   ActivityUpdate,
   FinancialSnapshotResponse,
   PermissionCheckResponse,
-  MyPermissionsResponse
+  MyPermissionsResponse,
+  MarketingCampaignOut,
+  PermissionV2Out,
+  AccessPolicyCreate,
+  AccessPolicyUpdate,
 } from "../types/api";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;

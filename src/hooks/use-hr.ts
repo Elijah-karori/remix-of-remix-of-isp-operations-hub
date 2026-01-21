@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { hrApi } from "@/lib/api";
-import { EmployeeProfileResponse, PayoutResponse } from "@/types/api";
+import { EmployeeProfileOut, PayoutOut } from "@/types/api";
 import { toast } from "sonner";
 
 export function useEmployees(params?: { engagement_type?: string; is_active?: boolean; skip?: number; limit?: number }) {

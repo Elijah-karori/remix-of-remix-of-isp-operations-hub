@@ -43,7 +43,7 @@ const formSchema = z.object({
   allocated_amount: z.coerce.number().min(0, 'Allocated amount must be non-negative.').optional(),
   start_date: z.date({ required_error: "Start date is required." }),
   end_date: z.date({ required_error: "End date is required." }),
-  status: z.enum(['Planned', 'Active', 'Completed', 'Archived']),
+  status: z.string(),
 });
 
 type MasterBudgetFormValues = z.infer<typeof formSchema>;
@@ -53,27 +53,27 @@ export function MasterBudgetForm({ initialData, onSuccess, onCancel }: MasterBud
 
   const form = useForm<MasterBudgetFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData ? {
-      ...initialData,
-      start_date: new Date(initialData.start_date),
-      end_date: new Date(initialData.end_date),
-    } : {
-      name: '',
+    defaultValues: {
+      name: initialData?.name || '',
       description: '',
-      total_amount: 0,
-      allocated_amount: 0,
-      start_date: new Date(),
-      end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 year from now
-      status: 'Planned',
+      total_amount: initialData?.total_amount || 0,
+      allocated_amount: initialData?.allocated_amount || 0,
+      start_date: initialData?.start_date ? new Date(initialData.start_date) : new Date(),
+      end_date: initialData?.end_date ? new Date(initialData.end_date) : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+      status: initialData?.status || 'Planned',
     },
   });
 
   useEffect(() => {
     if (initialData) {
       form.reset({
-        ...initialData,
+        name: initialData.name,
+        description: '',
+        total_amount: initialData.total_amount,
+        allocated_amount: initialData.allocated_amount || 0,
         start_date: new Date(initialData.start_date),
         end_date: new Date(initialData.end_date),
+        status: initialData.status || 'Planned',
       });
     }
   }, [initialData, form]);
@@ -94,10 +94,10 @@ export function MasterBudgetForm({ initialData, onSuccess, onCancel }: MasterBud
           toast.error("Error: Master Budget ID is missing for update operation.");
           return;
         }
-        await updateBudgetMutation.mutateAsync({ id: initialData.id, data: budgetData as MasterBudgetUpdate });
+        await updateBudgetMutation.mutateAsync({ id: initialData.id, data: budgetData as unknown as MasterBudgetUpdate });
         toast.success('Master Budget updated successfully!');
       } else {
-        await createBudgetMutation.mutateAsync(budgetData as MasterBudgetCreate);
+        await createBudgetMutation.mutateAsync(budgetData as unknown as MasterBudgetCreate);
         toast.success('Master Budget created successfully!');
       }
       onSuccess();

@@ -51,7 +51,7 @@ export function useProject(id: number) {
 export function useMilestones(projectId: number) {
     return useQuery<MilestoneOut[]>({
         queryKey: ["projectMilestones", projectId],
-        queryFn: () => projectsApi.getMilestones(projectId),
+        queryFn: () => projectsApi.getMilestones(projectId) as Promise<MilestoneOut[]>,
         enabled: !!projectId,
     });
 }

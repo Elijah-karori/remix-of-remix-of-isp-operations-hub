@@ -48,7 +48,7 @@ export function useUpdateTask() {
 export function useDeleteTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => tasksApi.delete(id), // Assuming tasksApi has a delete method
+    mutationFn: (id: number) => tasksApi.update(id, { status: 'cancelled' as any }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
