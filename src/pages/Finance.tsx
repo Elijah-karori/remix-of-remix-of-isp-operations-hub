@@ -900,7 +900,7 @@ export default function Finance() {
               </CardHeader>
               <CardContent>
                 <div className="h-72">
-                  {profitabilityLoading ? <LoadingSkeleton variant="chart" /> : profitabilityError ? <ErrorState message="Failed to load chart" /> : infrastructureProfitability.length === 0 ? (
+                  {profitabilityLoading ? <LoadingSkeleton className="h-full w-full" /> : profitabilityError ? <ErrorState message="Failed to load chart" /> : infrastructureProfitability.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-muted-foreground">
                       No profitability data available
                     </div>
@@ -944,7 +944,7 @@ export default function Finance() {
               <CardContent>
                 <div className="space-y-3">
                   {profitabilityLoading ? (
-                    <LoadingSkeleton variant="list" count={4} />
+                    <LoadingSkeleton className="h-8 w-full" count={4} />
                   ) : infrastructureProfitability.length === 0 ? (
                     <div className="text-center text-muted-foreground py-4">
                       No infrastructure data
@@ -981,7 +981,7 @@ export default function Finance() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-3">
-                {transactionsLoading ? <LoadingSkeleton variant="list" count={5} /> : transactionsError ? <ErrorState message="Failed to load transactions" /> : recentTransactions.length === 0 ? (
+                {transactionsLoading ? <LoadingSkeleton className="h-12 w-full" count={5} /> : transactionsError ? <ErrorState message="Failed to load transactions" /> : recentTransactions.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">
                     No recent transactions
                   </div>
@@ -1051,7 +1051,7 @@ export default function Finance() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-3">
-                {invoicesLoading ? <LoadingSkeleton variant="list" count={3} /> : invoicesError ? <ErrorState message="Failed to load invoices" /> : pendingInvoices.length === 0 ? (
+                {invoicesLoading ? <LoadingSkeleton className="h-12 w-full" count={3} /> : invoicesError ? <ErrorState message="Failed to load invoices" /> : pendingInvoices.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">
                     No overdue invoices
                   </div>
@@ -1099,7 +1099,7 @@ export default function Finance() {
               <CardTitle>All M-Pesa Transactions</CardTitle>
             </CardHeader>
             <CardContent>
-              {transactionsLoading ? <LoadingSkeleton variant="table" count={10} /> : transactionsError ? <ErrorState message="Failed to load transactions" /> : (
+              {transactionsLoading ? <LoadingSkeleton className="h-12 w-full" count={10} /> : transactionsError ? <ErrorState message="Failed to load transactions" /> : (
                 <div className="space-y-3">
                   {(transactionsData || []).map((tx: any) => {
                     const txType = getTransactionType(tx);
@@ -1167,7 +1167,7 @@ export default function Finance() {
               <CardTitle>Overdue Invoices</CardTitle>
             </CardHeader>
             <CardContent>
-              {invoicesLoading ? <LoadingSkeleton variant="table" count={5} /> : invoicesError ? <ErrorState message="Failed to load invoices" /> : (
+              {invoicesLoading ? <LoadingSkeleton className="h-12 w-full" count={5} /> : invoicesError ? <ErrorState message="Failed to load invoices" /> : (
                 <div className="space-y-3">
                   {(invoicesData || []).map((invoice: any) => (
                     <div
@@ -1454,7 +1454,7 @@ export default function Finance() {
               </Button>
             </CardHeader>
             <CardContent>
-              {loadingFinancialAccounts ? <LoadingSkeleton variant="table" count={3} /> : financialAccountsError ? <ErrorState message="Failed to load accounts" /> : financialAccounts && financialAccounts.length > 0 ? (
+              {loadingFinancialAccounts ? <LoadingSkeleton className="h-12 w-full" count={3} /> : financialAccountsError ? <ErrorState message="Failed to load accounts" /> : financialAccounts && financialAccounts.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -1471,9 +1471,9 @@ export default function Finance() {
                       {financialAccounts.map((account) => (
                         <TableRow key={account.id}>
                           <TableCell className="font-medium">{account.name}</TableCell>
-                          <TableCell>{account.account_number}</TableCell>
-                          <TableCell>{account.bank_name}</TableCell>
-                          <TableCell>{account.account_type}</TableCell>
+                          <TableCell>{account.account_number ?? 'N/A'}</TableCell>
+                          <TableCell>{account.bank_name ?? 'N/A'}</TableCell>
+                          <TableCell>{account.account_type ?? 'N/A'}</TableCell>
                           <TableCell className="text-right">{formatCurrency(account.balance || 0)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -1504,7 +1504,7 @@ export default function Finance() {
               </Button>
             </CardHeader>
             <CardContent>
-              {loadingMasterBudgets ? <LoadingSkeleton variant="table" count={3} /> : masterBudgetsError ? <ErrorState message="Failed to load master budgets" /> : masterBudgets && masterBudgets.length > 0 ? (
+              {loadingMasterBudgets ? <LoadingSkeleton className="h-12 w-full" count={3} /> : masterBudgetsError ? <ErrorState message="Failed to load master budgets" /> : masterBudgets && masterBudgets.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -1552,7 +1552,7 @@ export default function Finance() {
                                       <Plus className="h-4 w-4 mr-2" /> New Sub-Budget
                                     </Button>
                                   </CardTitle>
-                                  {loadingSubBudgets ? <LoadingSkeleton variant="table" count={2} /> : subBudgetsError ? <ErrorState message="Failed to load sub-budgets" /> : subBudgets && subBudgets.length > 0 ? (
+                                  {loadingSubBudgets ? <LoadingSkeleton className="h-12 w-full" count={2} /> : subBudgetsError ? <ErrorState message="Failed to load sub-budgets" /> : subBudgets && subBudgets.length > 0 ? (
                                     <Table>
                                       <TableHeader>
                                         <TableRow>
@@ -1599,7 +1599,7 @@ export default function Finance() {
                                                                     <Plus className="h-4 w-4 mr-2" /> New Usage
                                                                 </Button>
                                                             </CardTitle>
-                                                            {loadingBudgetUsages ? <LoadingSkeleton variant="table" count={2} /> : budgetUsagesError ? <ErrorState message="Failed to load usages" /> : budgetUsages && budgetUsages.length > 0 ? (
+                                                            {loadingBudgetUsages ? <LoadingSkeleton className="h-12 w-full" count={2} /> : budgetUsagesError ? <ErrorState message="Failed to load usages" /> : budgetUsages && budgetUsages.length > 0 ? (
                                                                 <Table>
                                                                     <TableHeader>
                                                                         <TableRow>
@@ -1615,7 +1615,7 @@ export default function Finance() {
                                                                             <TableRow key={usage.id}>
                                                                                 <TableCell>{usage.description}</TableCell>
                                                                                 <TableCell className="text-right">{formatCurrency(usage.amount)}</TableCell>
-                                                                                <TableCell>{format(new Date(usage.date), 'PPP')}</TableCell>
+                                                                                <TableCell>{format(new Date(usage.transaction_date), 'PPP')}</TableCell>
                                                                                 <TableCell><Badge>{usage.status}</Badge></TableCell>
                                                                                 <TableCell className="text-right">
                                                                                     <div className="flex items-center justify-end gap-2">
@@ -1714,7 +1714,7 @@ export default function Finance() {
                 <Wallet className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {loadingFinancialSnapshot ? <LoadingSkeleton variant="text" /> : financialSnapshotError ? <ErrorState message="Failed to load snapshot" /> : (
+                {loadingFinancialSnapshot ? <LoadingSkeleton className="h-8 w-full" /> : financialSnapshotError ? <ErrorState message="Failed to load snapshot" /> : (
                   <div className="space-y-2">
                     <p className="text-2xl font-bold">{formatCurrency(financialSnapshot?.total_assets || 0)}</p>
                     <div className="text-sm text-muted-foreground">
@@ -1737,7 +1737,7 @@ export default function Finance() {
                 <LineChart className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {loadingMonthlyProfit ? <LoadingSkeleton variant="chart" /> : monthlyProfitError ? <ErrorState message="Failed to load monthly profit" /> : monthlyProfitData ? (
+                {loadingMonthlyProfit ? <LoadingSkeleton className="h-full w-full" /> : monthlyProfitError ? <ErrorState message="Failed to load monthly profit" /> : monthlyProfitData ? (
                   <div className="h-40">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
@@ -1773,7 +1773,7 @@ export default function Finance() {
               <Hourglass className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {loadingPendingVariances ? <LoadingSkeleton variant="table" count={3} /> : pendingVariancesError ? <ErrorState message="Failed to load variances" /> : pendingVariances && pendingVariances.length > 0 ? (
+              {loadingPendingVariances ? <LoadingSkeleton className="h-12 w-full" count={3} /> : pendingVariancesError ? <ErrorState message="Failed to load variances" /> : pendingVariances && pendingVariances.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -1845,10 +1845,10 @@ export default function Finance() {
                         <CardTitle className="text-base">Budget Summary</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {loadingProjectBudgetSummary ? <LoadingSkeleton variant="text" /> : projectBudgetSummaryError ? <ErrorState message="Failed to load budget summary" /> : (
+                        {loadingProjectBudgetSummary ? <LoadingSkeleton className="h-8 w-full" /> : projectBudgetSummaryError ? <ErrorState message="Failed to load budget summary" /> : (
                           <div className="space-y-1 text-sm">
                             <p>Total Budget: {formatCurrency(projectBudgetSummary?.total_budget || 0)}</p>
-                            <p>Amount Spent: {formatCurrency(projectBudgetSummary?.amount_spent || 0)}</p>
+                            <p>Amount Spent: {formatCurrency(projectBudgetSummary?.spent_amount || 0)}</p>
                             <p>Remaining Budget: {formatCurrency(projectBudgetSummary?.remaining_budget || 0)}</p>
                             <p>Budget Status: <Badge>{projectBudgetSummary?.status}</Badge></p>
                           </div>
@@ -1861,7 +1861,7 @@ export default function Finance() {
                         <CardTitle className="text-base">Project Costs</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {loadingProjectCosts ? <LoadingSkeleton variant="table" count={2} /> : projectCostsError ? <ErrorState message="Failed to load project costs" /> : projectCosts && projectCosts.length > 0 ? (
+                        {loadingProjectCosts ? <LoadingSkeleton className="h-12 w-full" count={2} /> : projectCostsError ? <ErrorState message="Failed to load project costs" /> : projectCosts && projectCosts.length > 0 ? (
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -1892,7 +1892,7 @@ export default function Finance() {
                         <Calculator className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        {loadingProjectProfitability ? <LoadingSkeleton variant="text" /> : projectProfitabilityError ? <ErrorState message="Failed to load profitability" /> : (
+                        {loadingProjectProfitability ? <LoadingSkeleton className="h-8 w-full" /> : projectProfitabilityError ? <ErrorState message="Failed to load profitability" /> : (
                           <div className="space-y-1 text-sm">
                             <p>Revenue: {formatCurrency(projectProfitability?.revenue || 0)}</p>
                             <p>Expenses: {formatCurrency(projectProfitability?.expenses || 0)}</p>
@@ -1909,7 +1909,7 @@ export default function Finance() {
                         <Calculator className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        {loadingBudgetVariance ? <LoadingSkeleton variant="text" /> : budgetVarianceError ? <ErrorState message="Failed to load variance" /> : (
+                        {loadingBudgetVariance ? <LoadingSkeleton className="h-8 w-full" /> : budgetVarianceError ? <ErrorState message="Failed to load variance" /> : (
                           <div className="space-y-1 text-sm">
                             <p>Calculated Variance: {formatCurrency(budgetVariance?.variance_amount || 0)}</p>
                             <p>Status: <Badge>{budgetVariance?.status}</Badge></p>
@@ -1924,7 +1924,7 @@ export default function Finance() {
                         <Calculator className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        {loadingForecastCompletionCost ? <LoadingSkeleton variant="text" /> : forecastCompletionCostError ? <ErrorState message="Failed to load forecast" /> : (
+                        {loadingForecastCompletionCost ? <LoadingSkeleton className="h-8 w-full" /> : forecastCompletionCostError ? <ErrorState message="Failed to load forecast" /> : (
                           <div className="space-y-1 text-sm">
                             <p>Forecasted Cost: {formatCurrency(forecastCompletionCost?.forecasted_cost || 0)}</p>
                             <p>Confidence: {forecastCompletionCost?.confidence_level || 0}%</p>
@@ -1948,7 +1948,7 @@ export default function Finance() {
                   <CardDescription>Get recommendations based on your financial snapshot.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {loadingRecommendation ? <LoadingSkeleton variant="text" /> : recommendationError ? <ErrorState message="Failed to load recommendations" /> : recommendationData ? (
+                  {loadingRecommendation ? <LoadingSkeleton className="h-8 w-full" /> : recommendationError ? <ErrorState message="Failed to load recommendations" /> : recommendationData ? (
                     <div className="space-y-2">
                       <p className="text-sm">Based on your total assets of {formatCurrency(financialSnapshot?.total_assets || 0)}, we recommend the following allocation:</p>
                       <ul className="list-disc list-inside text-sm text-muted-foreground">

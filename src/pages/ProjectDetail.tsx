@@ -190,7 +190,7 @@ const ProjectDetail: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Budget:</span>
-                  <span>{project.budget ? project.budget.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A'}</span>
+                  <span>{project.budget ? formatCurrency(parseFloat(project.budget)) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Completion:</span>
@@ -237,7 +237,7 @@ const ProjectDetail: React.FC = () => {
                         <TableRow key={member.id}>
                           <TableCell>{member.full_name}</TableCell>
                           <TableCell>{member.email}</TableCell>
-                          <TableCell>{member.role?.name || 'N/A'}</TableCell>
+                          <TableCell>{member.roles?.[0]?.name || 'N/A'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -335,19 +335,15 @@ const ProjectDetail: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Allocated:</span>
-                      <span>{formatCurrency(budgetSummary.allocated_amount)}</span>
+                      <span>{formatCurrency(budgetSummary.total_allocated)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Spent:</span>
-                      <span>{formatCurrency(budgetSummary.spent_amount)}</span>
+                      <span>{formatCurrency(budgetSummary.total_spent)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Remaining:</span>
-                      <span>{formatCurrency(budgetSummary.remaining_amount)}</span>
-                    </div>
-                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Variance:</span>
-                      <span>{formatCurrency(budgetSummary.variance)}</span>
+                      <span>{formatCurrency(budgetSummary.remaining)}</span>
                     </div>
                   </>
                 )}
@@ -357,8 +353,8 @@ const ProjectDetail: React.FC = () => {
                     <Separator className="col-span-2 my-2" />
                     <h3 className="text-lg font-semibold col-span-2">Project Financials Overview</h3>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Budget:</span>
-                      <span>{formatCurrency(projectFinancials.total_budget)}</span>
+                      <span className="text-muted-foreground">Total Revenue:</span>
+                      <span>{formatCurrency(projectFinancials.total_revenue)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total Cost:</span>

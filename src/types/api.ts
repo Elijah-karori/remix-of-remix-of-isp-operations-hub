@@ -17,6 +17,7 @@ export interface User {
   is_active: boolean;
   is_superuser: boolean;
   roles: Role[]; // Old RBAC structure
+  role?: Role;
   roles_v2?: RoleV2Out[]; // New RBAC structure
   permissions_v2?: Array<{ name: string }>; // V2 permissions
   menus?: MenuItem[]; // Dynamic frontend navigation
@@ -110,6 +111,7 @@ export type ProjectPriority = 'low' | 'medium' | 'high' | 'critical';
 export interface ProjectOut {
   id: ID;
   name: string;
+  description?: string;
   project_type?: 'apartment' | 'single_home' | 'commercial';
   status: ProjectStatus;
   priority: ProjectPriority;
@@ -120,6 +122,8 @@ export interface ProjectOut {
   tech_lead_id?: ID;
   budget?: string; // Decimal string
   actual_cost?: string; // Decimal string
+  start_date?: DateString;
+  end_date?: DateString;
   created_at: DateString;
   location_lat?: number;
   location_lng?: number;
@@ -537,6 +541,9 @@ export interface FinancialAccount {
   id: ID;
   name: string;
   type: string;
+  account_number?: string;
+  bank_name?: string;
+  account_type?: string;
   balance: number;
   currency: string;
   is_active: boolean;
@@ -568,15 +575,21 @@ export interface BudgetSummary {
   project_id: ID;
   total_budget: number;
   total_allocated: number;
+  allocated_amount?: number;
   total_spent: number;
+  spent_amount?: number;
   remaining: number;
+  remaining_amount?: number;
   percent_used: number;
+  variance?: number;
+  status?: string;
   by_category?: Record<string, number>;
 }
 
 export interface ProjectFinancialsOut {
   project_id: ID;
   total_revenue: number;
+  total_budget?: number;
   total_cost: number;
   gross_profit: number;
   net_profit: number;
@@ -651,6 +664,7 @@ export interface BudgetUsageOut {
   amount: number;
   type: BudgetUsageType;
   status: BudgetUsageStatus;
+  date?: DateString;
   transaction_date: DateString;
   approved_by_id?: ID;
   approved_at?: DateString;
@@ -1050,15 +1064,21 @@ export interface ComplaintResponse {
   id: ID;
   employee_id: ID;
   complainant_id?: ID;
+  subject: string;
   description: string;
-  status: 'open' | 'investigating' | 'resolved' | 'closed';
+  complainant_name?: string;
+  resolution?: string;
+  status: 'open' | 'investigating' | 'resolved' | 'closed' | 'Pending';
   created_at: DateString;
 }
 
 export interface ComplaintCreate {
-  employee_id: ID;
+  employee_id?: ID;
+  subject: string;
   description: string;
   complainant_id?: ID;
+  complainant_name?: string;
+  complainant_contact?: string;
 }
 
 // Workflow Graph
