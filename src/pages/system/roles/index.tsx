@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const PermissionsPage: React.FC = () => {
-  const { data: permissions, error, isLoading } = useQuery({
-    queryKey: ['permissions'],
-    queryFn: () => permissionsApi.permissions(),
+const RolesPage: React.FC = () => {
+  const { data: roles, error, isLoading } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => permissionsApi.roles(),
   });
 
   return (
@@ -19,11 +19,11 @@ const PermissionsPage: React.FC = () => {
       <div className="container mx-auto py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Permissions Management</CardTitle>
+            <CardTitle>Roles Management</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <Button>Create Permission</Button>
+              <Button>Create Role</Button>
             </div>
             {isLoading && <LoadingSpinner />}
             {error && (
@@ -32,24 +32,22 @@ const PermissionsPage: React.FC = () => {
                 <AlertDescription>{error.message}</AlertDescription>
               </Alert>
             )}
-            {permissions && (
+            {roles && (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Resource</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Scope</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Permissions</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {permissions.map((permission: any) => (
-                    <TableRow key={permission.id}>
-                      <TableCell>{permission.name}</TableCell>
-                      <TableCell>{permission.resource}</TableCell>
-                      <TableCell>{permission.action}</TableCell>
-                      <TableCell>{permission.scope}</TableCell>
+                  {roles.map((role: any) => (
+                    <TableRow key={role.id}>
+                      <TableCell>{role.name}</TableCell>
+                      <TableCell>{role.description}</TableCell>
+                      <TableCell>{role.permissions.join(', ')}</TableCell>
                       <TableCell>
                         <Button variant="outline" size="sm" className="mr-2">
                           Edit
@@ -70,4 +68,4 @@ const PermissionsPage: React.FC = () => {
   );
 };
 
-export default PermissionsPage;
+export default RolesPage;

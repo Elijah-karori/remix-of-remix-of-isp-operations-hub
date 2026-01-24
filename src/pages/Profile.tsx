@@ -32,6 +32,8 @@ export default function Profile() {
   const [profileData, setProfileData] = useState({
     full_name: user?.full_name || "",
     phone_number: user?.phone_number || "",
+    job_title: user?.job_title || "",
+    department: user?.department || "",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -232,6 +234,24 @@ export default function Profile() {
                           className="pl-10"
                         />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="job_title">Job Title</Label>
+                      <Input
+                        id="job_title"
+                        value={profileData.job_title}
+                        onChange={(e) => setProfileData({ ...profileData, job_title: e.target.value })}
+                        disabled={isUpdatingProfile}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="department">Department</Label>
+                      <Input
+                        id="department"
+                        value={profileData.department}
+                        onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
+                        disabled={isUpdatingProfile}
+                      />
                     </div>
                   </div>
 

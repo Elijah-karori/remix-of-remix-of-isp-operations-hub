@@ -101,35 +101,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthChecked(true); // Still mark as checked
   };
 
+  const parseV2Permissions = (user: User | null): string[] => {
+    if (!user || !user.roles_v2) return [];
+
+    const v2Permissions = new Set<string>();
+
+    // Direct permissions
+    user.permissions_v2?.forEach(p => v2Permissions.add(p.name));
+
+    // Permissions from roles
+    user.roles_v2.forEach(role => {
+      role.permissions?.forEach(p => v2Permissions.add(p.name));
+    });
+
+    return Array.from(v2Permissions);
+  };
+
   const hasPermission = (permission: string) => {
-    // If the user has global wildcard permission
-    if (permissions.includes("*")) {
-        return true;
-    }
+    // V2 Permissions Check
+    const v2Permissions = parseV2Permissions(user);
+    if (v2Permissions.includes(permission)) return true;
 
-    // If the user has the exact permission
-    if (permissions.includes(permission)) {
-        return true;
-    }
+    // Legacy Permissions Check
+    if (permissions.includes("*")) return true;
+    if (permissions.includes(permission)) return true;
 
-    // Handle "module:action:all" permissions
-    // Example: if permission is "hr:complaints:read"
-    // Extract module: "hr", action: "read"
     const parts = permission.split(':');
-    if (parts.length === 3) {
-        const module = parts[0];
-        const action = parts[1]; // e.g., 'read', 'create', 'update', 'delete'
-        const allPermissionForAction = `${module}:${action}:all`; // e.g., "hr:read:all"
-        if (permissions.includes(allPermissionForAction)) {
-            return true;
-        }
-    } else if (parts.length === 2) { // e.g. "rbac:manage" where there is no resource specified
-        const module = parts[0];
-        const action = parts[1];
-        const allPermissionForAction = `${module}:${action}:all`; // e.g., "rbac:manage:all"
-        if (permissions.includes(allPermissionForAction)) {
-            return true;
-        }
+    if (parts.length >= 2) {
+      const resource = parts[0];
+      const action = parts[1];
+
+      if (permissions.includes(`${resource}:${action}:all`)) return true;
+      if (permissions.includes(`${resource}:manage:all`)) return true; // Broader manage permission
     }
 
     return false;
