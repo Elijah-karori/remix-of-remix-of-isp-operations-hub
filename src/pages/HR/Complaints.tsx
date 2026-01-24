@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { hrApi } from '@/lib/api';
+import { hrApi } from '@/lib/api/hr';
 import { ComplaintResponse, ComplaintCreate } from '@/types/api';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';

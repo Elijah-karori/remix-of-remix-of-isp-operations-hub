@@ -197,7 +197,7 @@ const App = () => (
             <Route
               path="/system/workflows"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="system:workflows:manage">
                   <Workflows />
                 </ProtectedRoute>
               }
@@ -205,7 +205,7 @@ const App = () => (
             <Route
               path="/system/permissions"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="system:permissions:manage">
                   <Permissions />
                 </ProtectedRoute>
               }
@@ -213,7 +213,7 @@ const App = () => (
             <Route
               path="/system/analytics"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="system:analytics:view">
                   <Analytics />
                 </ProtectedRoute>
               }
@@ -221,7 +221,7 @@ const App = () => (
             <Route
               path="/system/audit"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="system:audit:view">
                   <Audit />
                 </ProtectedRoute>
               }
@@ -229,7 +229,7 @@ const App = () => (
             <Route
               path="/system/settings"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="system:settings:manage">
                   <SystemSettings />
                 </ProtectedRoute>
               }
@@ -237,7 +237,7 @@ const App = () => (
             <Route
               path="/system/tester-coverage"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="system:testing:view">
                   <TesterCoverage />
                 </ProtectedRoute>
               }
@@ -245,7 +245,7 @@ const App = () => (
             <Route
               path="/system/auditor-heatmap"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="system:auditing:view">
                   <AuditorHeatmap />
                 </ProtectedRoute>
               }

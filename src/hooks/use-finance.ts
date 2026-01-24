@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { financeApi, mpesaApi, ncbaApi } from '@/lib/api';
+import { financeApi, mpesaApi, ncbaApi } from '@/lib/api/finance';
 import {
   MasterBudget, MasterBudgetCreate, MasterBudgetUpdate,
   SubBudget, SubBudgetCreate, SubBudgetUpdate,

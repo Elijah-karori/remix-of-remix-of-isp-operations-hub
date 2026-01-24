@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { dashboardApi } from '@/lib/api';
+import { dashboardApi } from '@/lib/api/dashboard';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

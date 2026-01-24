@@ -19,7 +19,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { MilestoneForm } from '@/components/projects/MilestoneForm'; // New import
 import { ExclamationTriangleIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { financeApi, projectsApi } from '@/lib/api';
+import { financeApi } from '@/lib/api/finance';
+import { projectsApi } from '@/lib/api/projects';
 import { ProjectOut, UserOut, MilestoneOut, BudgetSummary, ProjectFinancialsOut } from '@/types/api';
 import { useMilestones } from '@/hooks/use-projects'; // New import for milestones
 

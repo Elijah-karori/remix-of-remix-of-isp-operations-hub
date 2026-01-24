@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { rbacApi, managementApi, permissionsApi, usersApi, authApi } from '@/lib/api';
+import { rbacApi, managementApi, permissionsApi } from '@/lib/api/rbac';
+import { usersApi } from '@/lib/api/users';
+import { authApi } from '@/lib/api/auth';
 import {
   PermissionCheckResponse,
   MyPermissionsResponse,
