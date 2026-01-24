@@ -20,7 +20,9 @@ import {
   Filler,
 } from 'chart.js';
 import { toast } from 'sonner';
-import { dashboardApi, workflowApi, auditApi } from '@/lib/api';
+import { dashboardApi } from '@/lib/api/dashboard';
+import { workflowApi } from '@/lib/api/workflow';
+import { auditApi } from '@/lib/api/audit';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { format, subDays } from 'date-fns';
 

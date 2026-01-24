@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Play, Clock, CheckCircle2, XCircle, Loader2, RefreshCw, GitBranch } from 'lucide-react';
-import { workflowApi } from '@/lib/api';
+import { workflowApi } from '@/lib/api/workflow';
 import { WorkflowDefinitionRead, WorkflowInstanceRead } from '@/types/api';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { toast } from 'sonner';

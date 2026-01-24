@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { crmApi } from '@/lib/api';
+import { crmApi } from '@/lib/api/crm';
 import { LeadCreate, LeadUpdate, Lead, Deal, DealCreate, DealUpdate, Activity, ActivityCreate, ActivityUpdate } from '@/types/api'; // Added Deal and Activity types
 import { toast } from 'sonner';
 
