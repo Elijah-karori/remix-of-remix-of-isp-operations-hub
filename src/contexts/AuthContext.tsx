@@ -121,22 +121,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const hasPermission = (permission: string) => {
-    // V2 Permissions Check
     const v2Permissions = parseV2Permissions(user);
-    if (v2Permissions.includes(permission)) return true;
+    const allPermissions = [...new Set([...v2Permissions, ...permissions])];
 
-    // Legacy Permissions Check
-    if (permissions.includes("*")) return true;
-    if (permissions.includes(permission)) return true;
+    // 1. Exact match or superuser wildcard
+    if (allPermissions.includes("*") || allPermissions.includes(permission)) return true;
 
     const parts = permission.split(':');
-    if (parts.length >= 2) {
-      const resource = parts[0];
-      const action = parts[1];
+    if (parts.length < 2) return false;
 
-      if (permissions.includes(`${resource}:${action}:all`)) return true;
-      if (permissions.includes(`${resource}:manage:all`)) return true; // Broader manage permission
-    }
+    const resource = parts[0];
+    const action = parts[1];
+    const requestedScope = parts[2] || 'all';
+
+    // 2. Check for "manage" permission which overrides specific actions
+    if (allPermissions.includes(`${resource}:manage:all`)) return true;
+    if (allPermissions.includes(`${resource}:manage:${requestedScope}`)) return true;
+
+    // 3. Logic for scope inheritance: "all" > "department" > "own", etc.
+    // If user has "all" scope for this resource:action, they have everything
+    if (allPermissions.includes(`${resource}:${action}:all`)) return true;
+
+    // If user has "department" scope, they have "own"
+    if (requestedScope === 'own' && allPermissions.includes(`${resource}:${action}:department`)) return true;
+
+    // If user has "assigned" scope, they have "own" (usually)
+    if (requestedScope === 'own' && allPermissions.includes(`${resource}:${action}:assigned`)) return true;
+
+    // 4. Fallback to legacy permission without scope (treat as 'all' or 'assigned' depending on context)
+    // Most legacy permissions were effectively 'all' for their resource:action
+    if (allPermissions.includes(`${resource}:${action}`)) return true;
 
     return false;
   };

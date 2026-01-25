@@ -36,18 +36,39 @@ export const useAllPermissions = (permissions: string[]): boolean => {
 };
 
 /**
- * Get all permissions for a specific resource
+ * Get all permissions for a specific resource with scope granularity
  */
 export const useResourcePermissions = (resource: string) => {
     const { hasPermission } = useAuth();
 
     return useMemo(
         () => ({
-            canCreate: hasPermission(`${resource}:create`) || hasPermission(`${resource}:create:all`),
-            canRead: hasPermission(`${resource}:read`) || hasPermission(`${resource}:read:all`),
-            canUpdate: hasPermission(`${resource}:update`) || hasPermission(`${resource}:update:all`),
-            canDelete: hasPermission(`${resource}:delete`) || hasPermission(`${resource}:delete:all`),
-            canManage: hasPermission(`${resource}:manage`) || hasPermission(`${resource}:manage:all`),
+            // Basic actions (defaults to 'all' or fallback logic in hasPermission)
+            canCreate: hasPermission(`${resource}:create`),
+            canRead: hasPermission(`${resource}:read`),
+            canUpdate: hasPermission(`${resource}:update`),
+            canDelete: hasPermission(`${resource}:delete`),
+            canManage: hasPermission(`${resource}:manage`),
+
+            // Scope-aware read permissions
+            read: {
+                all: hasPermission(`${resource}:read:all`),
+                dept: hasPermission(`${resource}:read:department`),
+                own: hasPermission(`${resource}:read:own`),
+                assigned: hasPermission(`${resource}:read:assigned`),
+            },
+
+            // Scope-aware update/delete
+            update: {
+                all: hasPermission(`${resource}:update:all`),
+                dept: hasPermission(`${resource}:update:department`),
+                own: hasPermission(`${resource}:update:own`),
+            },
+
+            delete: {
+                all: hasPermission(`${resource}:delete:all`),
+                own: hasPermission(`${resource}:delete:own`),
+            }
         }),
         [resource, hasPermission]
     );
