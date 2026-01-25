@@ -9,11 +9,14 @@ interface AuthContextType {
   permissions: string[];
   isLoading: boolean;
   isAuthenticated: boolean;
-  isAuthChecked: boolean; // New: track if auth check is complete
-  login: (email: string, password: string) => Promise<void>;
+  isAuthChecked: boolean;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
   refreshUser: () => Promise<void>;
+  getUserRoles: () => string[];
+  getFilteredMenus: () => MenuItem[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,11 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchUserAndPermissions();
   }, [fetchUserAndPermissions]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe = false) => {
     setIsLoading(true);
     try {
       // 1. Get token from login
-      await authApi.login(email, password);
+      await authApi.login(email, password, rememberMe);
 
       // 2. Fetch user data and permissions
       const success = await fetchUserAndPermissions();
@@ -142,6 +145,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchUserAndPermissions();
   };
 
+  const hasAnyPermission = (permissionsToCheck: string[]) => {
+    return permissionsToCheck.some(permission => hasPermission(permission));
+  };
+
+  const getUserRoles = (): string[] => {
+    if (!user) return [];
+    const roles: string[] = [];
+
+    // RBAC v2 roles
+    user.roles_v2?.forEach(role => roles.push(role.name));
+
+    // Legacy roles
+    user.roles?.forEach(role => roles.push(role.name));
+
+    // Single role
+    if (user.role?.name && !roles.includes(user.role.name)) {
+      roles.push(user.role.name);
+    }
+
+    return [...new Set(roles)];
+  };
+
+  const getFilteredMenus = (): MenuItem[] => {
+    return user?.menus || [];
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -149,11 +178,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         permissions,
         isLoading,
         isAuthenticated: !!user,
-        isAuthChecked, // Expose this
+        isAuthChecked,
         login,
         logout,
         hasPermission,
+        hasAnyPermission,
         refreshUser,
+        getUserRoles,
+        getFilteredMenus,
       }}
     >
       {children}

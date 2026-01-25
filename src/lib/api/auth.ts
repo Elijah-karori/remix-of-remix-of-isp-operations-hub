@@ -2,7 +2,7 @@ import { Token, UserCreate, UserOut, UserUpdate } from '../../types/api';
 import { apiFetch, setAccessToken, API_BASE_URL } from './base';
 
 export const authApi = {
-  login: async (email: string, password: string): Promise<Token> => {
+  login: async (email: string, password: string, rememberMe = false): Promise<Token> => {
     const formData = new URLSearchParams();
     formData.append("username", email);
     formData.append("password", password);
@@ -25,7 +25,7 @@ export const authApi = {
     }
 
     const data: Token = await response.json();
-    setAccessToken(data.access_token);
+    setAccessToken(data.access_token, rememberMe);
     return data;
   },
 

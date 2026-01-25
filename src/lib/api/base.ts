@@ -2,19 +2,66 @@ import { Token } from '../../types/api';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Token management
-let accessToken: string | null = localStorage.getItem("access_token");
+// Token storage keys
+const STORAGE_KEY = 'access_token';
+const REMEMBER_KEY = 'remember_me';
 
-export const setAccessToken = (token: string | null) => {
-  accessToken = token;
-  if (token) {
-    localStorage.setItem("access_token", token);
+// Token management with "Remember Me" support
+let accessToken: string | null = null;
+
+// Initialize token from storage on module load
+const initializeToken = (): string | null => {
+  // Check if "Remember Me" was enabled
+  const rememberMe = localStorage.getItem(REMEMBER_KEY) === 'true';
+
+  if (rememberMe) {
+    // Use localStorage if "Remember Me" was enabled
+    return localStorage.getItem(STORAGE_KEY);
   } else {
-    localStorage.removeItem("access_token");
+    // Use sessionStorage by default (more secure)
+    return sessionStorage.getItem(STORAGE_KEY);
+  }
+};
+
+accessToken = initializeToken();
+
+/**
+ * Set access token with optional "Remember Me" functionality
+ * @param token - JWT access token or null to clear
+ * @param rememberMe - If true, stores token in localStorage; otherwise sessionStorage
+ */
+export const setAccessToken = (token: string | null, rememberMe = false) => {
+  accessToken = token;
+
+  if (token) {
+    // Store based on "Remember Me" preference
+    if (rememberMe) {
+      localStorage.setItem(STORAGE_KEY, token);
+      localStorage.setItem(REMEMBER_KEY, 'true');
+      // Clear from sessionStorage to avoid conflicts
+      sessionStorage.removeItem(STORAGE_KEY);
+    } else {
+      sessionStorage.setItem(STORAGE_KEY, token);
+      // Clear from localStorage
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(REMEMBER_KEY);
+    }
+  } else {
+    // Clear from both storages
+    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(REMEMBER_KEY);
   }
 };
 
 export const getAccessToken = () => accessToken;
+
+/**
+ * Check if "Remember Me" is currently active
+ */
+export const isRememberMeActive = (): boolean => {
+  return localStorage.getItem(REMEMBER_KEY) === 'true';
+};
 
 // API fetch wrapper with error handling
 interface ApiFetchConfig {
