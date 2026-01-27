@@ -90,10 +90,14 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     if (response.status === 401 && config.handle401) {
+      console.log(`apiFetch: 401 detected for ${endpoint}, attempting refresh...`);
       try {
-        const refreshResponse = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+        const refreshResponse = await fetch(`${API_BASE_URL}/api/v1/auth/refresh/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentToken}`
+          },
         });
 
         if (refreshResponse.ok) {
@@ -119,12 +123,20 @@ export async function apiFetch<T>(
       }
 
       setAccessToken(null);
-      window.location.href = '/login';
+      // Only redirect if we're not already on the login page to avoid loops
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
       throw new Error("Session expired. Please log in again.");
     }
 
-    const error = await response.json().catch(() => ({ detail: "An unknown error occurred" }));
-    throw new Error(error.detail || `HTTP error ${response.status}`);
+    const errorData = await response.json().catch(() => ({ detail: "An unknown error occurred" }));
+    // Handle list of errors or single detail string as per FastAPI standards
+    const errorMessage = Array.isArray(errorData.detail)
+      ? errorData.detail[0].msg
+      : (errorData.detail || `HTTP error ${response.status}`);
+
+    throw new Error(errorMessage);
   }
 
   const text = await response.text();

@@ -4,7 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthProvider";
+import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SessionTimeoutWarning } from "@/components/auth/SessionTimeoutWarning";
 import { initializeSecurity } from "@/lib/security/csp";
@@ -66,7 +67,6 @@ const App = () => {
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
-            {/* Session timeout warning modal */}
             <SessionTimeoutWarning />
 
             <Routes>

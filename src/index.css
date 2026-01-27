@@ -6,63 +6,63 @@
 
 @layer base {
   :root {
-    /* ISP ERP Design System - Professional Dark Theme */
-    --background: 222 47% 11%;
+    /* ISP ERP Design System - Neon Earth Theme */
+    --background: 5 27% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 13%;
+    --card: 5 27% 12%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 11%;
+    --popover: 5 27% 9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 173 80% 40%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 145 100% 60%;
+    --primary-foreground: 5 27% 8%;
 
-    --secondary: 217 33% 17%;
+    --secondary: 219 42% 40%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 219 42% 20%;
+    --muted-foreground: 219 20% 70%;
 
-    --accent: 173 80% 40%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 193 100% 68%;
+    --accent-foreground: 5 27% 8%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
+    --success: 145 100% 60%;
+    --success-foreground: 5 27% 8%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 11%;
+    --warning-foreground: 5 27% 8%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 173 80% 40%;
+    --border: 5 27% 20%;
+    --input: 5 27% 20%;
+    --ring: 145 100% 60%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 215 20% 65%;
-    --sidebar-primary: 173 80% 40%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 15%;
+    --sidebar-background: 5 27% 6%;
+    --sidebar-foreground: 219 20% 70%;
+    --sidebar-primary: 145 100% 60%;
+    --sidebar-primary-foreground: 5 27% 8%;
+    --sidebar-accent: 5 27% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 15%;
-    --sidebar-ring: 173 80% 40%;
+    --sidebar-border: 5 27% 15%;
+    --sidebar-ring: 145 100% 60%;
 
     /* Custom ERP tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(173, 80%, 40%), hsl(190, 80%, 45%));
-    --gradient-card: linear-gradient(180deg, hsl(222, 47%, 15%), hsl(222, 47%, 12%));
-    --gradient-accent: linear-gradient(135deg, hsl(173, 80%, 40%), hsl(160, 80%, 35%));
-    --shadow-glow: 0 0 40px -10px hsl(173 80% 40% / 0.3);
-    --shadow-card: 0 4px 24px -4px hsl(222 47% 5% / 0.5);
-    --chart-1: 173 80% 40%;
-    --chart-2: 142 76% 36%;
+    --gradient-primary: linear-gradient(135deg, hsl(145, 100%, 60%), hsl(193, 100%, 68%));
+    --gradient-card: linear-gradient(180deg, hsl(5, 27%, 15%), hsl(5, 27%, 12%));
+    --gradient-accent: linear-gradient(135deg, hsl(193, 100%, 68%), hsl(145, 100%, 60%));
+    --shadow-glow: 0 0 40px -10px hsl(145 100% 60% / 0.4);
+    --shadow-card: 0 4px 24px -4px hsl(5 27% 4% / 0.6);
+    --chart-1: 145 100% 60%;
+    --chart-2: 193 100% 68%;
     --chart-3: 38 92% 50%;
-    --chart-4: 262 83% 58%;
+    --chart-4: 219 42% 40%;
     --chart-5: 0 84% 60%;
   }
 

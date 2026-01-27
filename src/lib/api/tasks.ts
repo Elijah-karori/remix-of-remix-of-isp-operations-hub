@@ -15,7 +15,8 @@ export const tasksApi = {
     if (params?.assigned_role) searchParams.append("assigned_role", params.assigned_role);
     if (params?.department_id) searchParams.append("department_id", String(params.department_id));
     if (params?.priority) searchParams.append("priority", params.priority);
-    return apiFetch<TaskOut[]>(`/api/v1/tasks/?${searchParams}`);
+    const query = searchParams.toString();
+    return apiFetch<TaskOut[]>(`/api/v1/tasks/?${query ? query : ''}`);
   },
 
   myAssignments: async (): Promise<TaskOut[]> => {

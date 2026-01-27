@@ -27,11 +27,12 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
     const [activeTab, setActiveTab] = useState<'password' | 'passwordless'>('password');
     const navigate = useNavigate();
     const location = useLocation();
-    const { login } = useAuth();
+    const { login, verifyOTP } = useAuth(); // Assuming verifyOTP is also provided by useAuth
 
-    // Standard login state
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    // standard login flow steps: 'password' | 'otp'
+    const [loginStep, setLoginStep] = useState<'password' | 'otp'>('password');
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -57,20 +58,21 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
             const remaining = loginRateLimiter.getRemainingLockoutTime();
             setIsLockedOut(true);
             setLockoutTime(remaining);
-            setError(`Too many failed attempts. Please try again in ${Math.ceil(remaining / 60)} minutes.`);
+            setError(`Too many failed attempts. Try again in ${Math.ceil(remaining / 60)} minutes.`);
             return;
         }
 
         setIsLoading(true);
 
         try {
-            await login(email, password, rememberMe);
-            loginRateLimiter.recordSuccess();
+            // Phase 1: Verify Password
+            await login(loginEmail, loginPassword);
 
-            // Redirect to intended destination or dashboard
-            const from = (location.state as any)?.from?.pathname || '/dashboard';
-            navigate(from, { replace: true });
-            onClose();
+            // Phase 2: Request OTP
+            await authApi.requestOTP(loginEmail);
+
+            setLoginStep('otp');
+            setError(''); // Clear any previous errors
         } catch (err) {
             loginRateLimiter.recordFailedAttempt();
             const remaining = loginRateLimiter.getRemainingAttempts();
@@ -87,6 +89,26 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 setLockoutTime(lockout);
                 setError(`Too many failed attempts. Account locked for ${Math.ceil(lockout / 60)} minutes.`);
             }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleOtpVerification = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setIsLoading(true);
+
+        try {
+            // Phase 3: Verify OTP and get Token
+            await verifyOTP(loginEmail, otp, rememberMe);
+            loginRateLimiter.recordSuccess();
+
+            const from = (location.state as any)?.from?.pathname || '/dashboard';
+            navigate(from, { replace: true });
+            onClose();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Invalid OTP code');
         } finally {
             setIsLoading(false);
         }
@@ -162,88 +184,142 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
 
                     {/* Standard Login */}
                     <TabsContent value="password" className="space-y-4">
-                        <form onSubmit={handleStandardLogin} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="you@example.com"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="pl-10"
-                                        required
-                                        disabled={isLoading || isLockedOut}
-                                    />
+                        {loginStep === 'password' ? (
+                            <form onSubmit={handleStandardLogin} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            placeholder="you@example.com"
+                                            value={loginEmail}
+                                            onChange={(e) => setLoginEmail(e.target.value)}
+                                            className="pl-10"
+                                            required
+                                            disabled={isLoading || isLockedOut}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        placeholder="••••••••"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="pl-10"
-                                        required
-                                        disabled={isLoading || isLockedOut}
-                                    />
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Password</Label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            placeholder="••••••••"
+                                            value={loginPassword}
+                                            onChange={(e) => setLoginPassword(e.target.value)}
+                                            className="pl-10"
+                                            required
+                                            disabled={isLoading || isLockedOut}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="remember"
-                                        checked={rememberMe}
-                                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                                        disabled={isLoading || isLockedOut}
-                                    />
-                                    <Label
-                                        htmlFor="remember"
-                                        className="text-sm font-normal cursor-pointer"
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="remember"
+                                            checked={rememberMe}
+                                            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                                            disabled={isLoading || isLockedOut}
+                                        />
+                                        <Label
+                                            htmlFor="remember"
+                                            className="text-sm font-normal cursor-pointer"
+                                        >
+                                            Remember me
+                                        </Label>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="link"
+                                        className="px-0 text-sm"
+                                        onClick={() => setActiveTab('passwordless')}
                                     >
-                                        Remember me
-                                    </Label>
+                                        Forgot password?
+                                    </Button>
                                 </div>
+
+                                {error && (
+                                    <Alert variant="destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertDescription>{error}</AlertDescription>
+                                    </Alert>
+                                )}
+
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={isLoading || isLockedOut}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Verifying Credentials...
+                                        </>
+                                    ) : (
+                                        'Next'
+                                    )}
+                                </Button>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleOtpVerification} className="space-y-4">
+                                <div className="space-y-2 text-center">
+                                    <Label htmlFor="login-otp">OTP Verification</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Enter the 6-digit code sent to {loginEmail}
+                                    </p>
+                                    <Input
+                                        id="login-otp"
+                                        type="text"
+                                        placeholder="000000"
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                        className="text-center text-3xl tracking-[0.5em] font-bold h-16"
+                                        required
+                                        maxLength={6}
+                                        disabled={isLoading}
+                                    />
+                                </div>
+
+                                {error && (
+                                    <Alert variant="destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertDescription>{error}</AlertDescription>
+                                    </Alert>
+                                )}
+
+                                <Button
+                                    type="submit"
+                                    className="w-full h-12 text-lg"
+                                    disabled={isLoading || otp.length !== 6}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Authenticating...
+                                        </>
+                                    ) : (
+                                        'Verify & Login'
+                                    )}
+                                </Button>
+
                                 <Button
                                     type="button"
-                                    variant="link"
-                                    className="px-0 text-sm"
-                                    onClick={() => setActiveTab('passwordless')}
+                                    variant="ghost"
+                                    className="w-full"
+                                    onClick={() => setLoginStep('password')}
+                                    disabled={isLoading}
                                 >
-                                    Forgot password?
+                                    Back to Password
                                 </Button>
-                            </div>
-
-                            {error && (
-                                <Alert variant="destructive">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertDescription>{error}</AlertDescription>
-                                </Alert>
-                            )}
-
-                            <Button
-                                type="submit"
-                                className="w-full"
-                                disabled={isLoading || isLockedOut}
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Signing in...
-                                    </>
-                                ) : (
-                                    'Sign In'
-                                )}
-                            </Button>
-                        </form>
+                            </form>
+                        )}
                     </TabsContent>
 
                     {/* Passwordless Login */}

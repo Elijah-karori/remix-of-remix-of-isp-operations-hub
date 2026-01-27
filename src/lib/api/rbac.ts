@@ -21,7 +21,7 @@ export const rbacApi = {
 export const managementApi = {
   // RBAC Hierarchy & Roles
   getRoleHierarchy: () =>
-    apiFetch<RoleHierarchy[]>("/api/v1/management/rbac/roles/tree"),
+    apiFetch<RoleHierarchy[]>("/api/v1/api/v1/rbac/v2/hierarchy/tree"),
 
   getSortedRoles: (sortBy = "name", algorithm = "merge") =>
     apiFetch(`/api/v1/management/rbac/roles/sorted?sort_by=${sortBy}&algorithm=${algorithm}`),
@@ -42,10 +42,10 @@ export const managementApi = {
 
   // Access Policies
   listAccessPolicies: () =>
-    apiFetch<AccessPolicyOut[]>("/api/v1/management/access-policies/"),
+    apiFetch<AccessPolicyOut[]>("/api/v1/api/v1/rbac/v2/policies"),
 
   createAccessPolicy: (data: any) =>
-    apiFetch<AccessPolicyOut>("/api/v1/management/access-policies/", {
+    apiFetch<AccessPolicyOut>("/api/v1/management/access-policies", {
       method: "POST",
       body: JSON.stringify(data)
     }),

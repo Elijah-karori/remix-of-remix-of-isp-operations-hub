@@ -7,7 +7,8 @@ export const projectsApi = {
     if (params?.status) searchParams.append("status", params.status);
     if (params?.infrastructure_type) searchParams.append("infrastructure_type", params.infrastructure_type);
     if (params?.department_id) searchParams.append("department_id", String(params.department_id));
-    return apiFetch<ProjectOut[]>(`/api/v1/projects/?${searchParams}`);
+    const query = searchParams.toString();
+    return apiFetch<ProjectOut[]>(`/api/v1/projects/?${query ? query : ''}`);
   },
 
   get: async (id: number): Promise<ProjectOut> => {

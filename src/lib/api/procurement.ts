@@ -67,7 +67,7 @@ export const procurementApi = {
 
   // Legacy (Keeping for compatibility but fixing paths)
   create: (data: any) =>
-    apiFetch("/api/v1/procurement/", {
+    apiFetch("/api/v1/procurement", {
       method: "POST",
       body: JSON.stringify(data)
     }),

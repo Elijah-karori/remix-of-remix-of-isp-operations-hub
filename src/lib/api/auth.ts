@@ -2,7 +2,11 @@ import { Token, UserCreate, UserOut, UserUpdate } from '../../types/api';
 import { apiFetch, setAccessToken, API_BASE_URL } from './base';
 
 export const authApi = {
-  login: async (email: string, password: string, rememberMe = false): Promise<Token> => {
+  /**
+   * Phase 1: Verify Password
+   * Returns successful status but not the final JWT if 2FA is required.
+   */
+  login: async (email: string, password: string): Promise<{ status: string }> => {
     const formData = new URLSearchParams();
     formData.append("username", email);
     formData.append("password", password);
@@ -15,18 +19,38 @@ export const authApi = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: "Login failed" }));
-      if (response.status === 401) {
-        throw new Error("Invalid email or password");
-      }
-      if (response.status === 403) {
-        throw new Error("Account is inactive. Please contact administrator.");
-      }
-      throw new Error(error.detail || "Login failed");
+      throw new Error(error.detail || "Invalid credentials");
     }
 
-    const data: Token = await response.json();
-    setAccessToken(data.access_token, rememberMe);
-    return data;
+    return response.json();
+  },
+
+  /**
+   * Phase 2: Request OTP after password verification
+   */
+  requestOTP: async (email: string): Promise<void> => {
+    const formData = new URLSearchParams();
+    formData.append("email", email);
+
+    return apiFetch("/api/v1/auth/otp/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData,
+    });
+  },
+
+  /**
+   * Phase 3: OTP Verification and Token Issuance
+   */
+  verifyOTPLogin: async (email: string, otp: string, rememberMe = false): Promise<Token> => {
+    const response = await apiFetch<Token>(`/api/v1/auth/otp/login?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`, {
+      method: "POST",
+    }, { handle401: false });
+
+    if (response.access_token) {
+      setAccessToken(response.access_token, rememberMe);
+    }
+    return response;
   },
 
   register: async (data: UserCreate): Promise<UserOut> => {
@@ -36,21 +60,18 @@ export const authApi = {
     });
   },
 
-  requestRegistrationOTP: async (email: string, full_name?: string, phone?: string) => {
-    return apiFetch("/api/v1/auth/register/otp/request", {
+  requestRegistrationOTP: async (data: any) => {
+    return apiFetch("/api/v1/auth/register/otp", {
       method: "POST",
-      body: JSON.stringify({ email, full_name, phone }),
+      body: JSON.stringify(data),
     });
   },
 
   verifyRegistrationOTP: async (email: string, otp: string) => {
-    const searchParams = new URLSearchParams();
-    searchParams.append("email", email);
-    searchParams.append("otp", otp);
-
-    const response = await apiFetch<Token>(`/api/v1/auth/register/otp/verify?${searchParams.toString()}`, {
+    const response = await apiFetch<Token>(`/api/v1/auth/register/verify?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`, {
       method: "POST",
     }, { handle401: false });
+
     if (response.access_token) {
       setAccessToken(response.access_token);
     }
@@ -64,15 +85,9 @@ export const authApi = {
   },
 
   verifyPasswordlessOTP: async (email: string, otp: string) => {
-    const searchParams = new URLSearchParams();
-    searchParams.append("email", email);
-    searchParams.append("otp", otp);
-
-    const response = await apiFetch<Token>(`/api/v1/auth/passwordless/verify-otp?${searchParams.toString()}`, {
+    return apiFetch<Token>(`/api/v1/auth/passwordless/verify-otp?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`, {
       method: "POST",
     }, { handle401: false });
-    setAccessToken(response.access_token);
-    return response;
   },
 
   verifyMagicLink: async (token: string): Promise<Token> => {
@@ -83,11 +98,11 @@ export const authApi = {
   },
 
   me: async (): Promise<UserOut> => {
-    return apiFetch<UserOut>("/api/v1/auth/me");
+    return apiFetch<UserOut>("/api/v1/users/me/");
   },
 
   updateProfile: async (data: UserUpdate): Promise<UserOut> => {
-    return apiFetch<UserOut>("/api/v1/auth/me", {
+    return apiFetch<UserOut>("/api/v1/users/me", {
       method: "PUT",
       body: JSON.stringify(data),
     });
@@ -101,18 +116,11 @@ export const authApi = {
   },
 
   refresh: async (): Promise<Token> => {
-    return apiFetch<Token>("/api/v1/auth/refresh", {
+    return apiFetch<Token>("/api/v1/auth/refresh/", {
       method: "POST",
     }).then(data => {
       setAccessToken(data.access_token);
       return data;
-    });
-  },
-
-  setPassword: async (newPassword: string, confirmPassword: string) => {
-    return apiFetch("/api/v1/auth/set-password", {
-      method: "POST",
-      body: JSON.stringify({ new_password: newPassword, confirm_password: confirmPassword }),
     });
   },
 
@@ -122,17 +130,20 @@ export const authApi = {
     });
   },
 
-  resetPassword: async (email: string, otp: string, newPassword: string) => {
-    return apiFetch("/api/v1/auth/set-password", {
-      method: "POST",
-      body: JSON.stringify({
-        email,
-        otp,
-        new_password: newPassword,
-        confirm_password: newPassword
-      }),
-    });
+  logout: async () => {
+    try {
+      await apiFetch("/api/v1/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.warn("Backend logout failed", e);
+    } finally {
+      setAccessToken(null);
+    }
   },
 
-  logout: () => setAccessToken(null),
+  setPassword: async (data: { new_password: string; confirm_password: string }) => {
+    return apiFetch("/api/v1/auth/set-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
 };
