@@ -1,5 +1,7 @@
 import { Token, UserCreate, UserOut, UserUpdate } from '../../types/api';
-import { apiFetch, setAccessToken, API_BASE_URL } from './base';
+import { apiFetch, setAccessToken, API_BASE_URL, getCurrentUserId } from './base';
+import { rbacApi } from './rbac';
+import { usersApi } from './users';
 
 export const authApi = {
   /**
@@ -28,15 +30,27 @@ export const authApi = {
   /**
    * Phase 2: Request OTP after password verification
    */
-  requestOTP: async (email: string): Promise<void> => {
+  requestOTP: async (email: string, password: string): Promise<{ message: string }> => {
     const formData = new URLSearchParams();
-    formData.append("email", email);
+    formData.append("grant_type", "password");
+    formData.append("username", email);
+    formData.append("password", password);
+    formData.append("scope", "");
+    formData.append("client_id", "");
+    formData.append("client_secret", "");
 
-    return apiFetch("/api/v1/auth/otp/request", {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/otp/request`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: formData,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: "Failed to request OTP" }));
+      throw new Error(error.detail || "Failed to request OTP");
+    }
+
+    return response.json();
   },
 
   /**
@@ -98,11 +112,62 @@ export const authApi = {
   },
 
   me: async (): Promise<UserOut> => {
-    return apiFetch<UserOut>("/api/v1/users/me/");
+    return apiFetch<UserOut>(`/api/v1/auth/me`);
+  },
+
+  /**
+   * Get complete user profile including info, roles, and permissions
+   */
+  getProfile: async () => {
+    try {
+      // Get user info using the /api/v1/auth/me endpoint
+      const user = await apiFetch<UserOut>(`/api/v1/auth/me`);
+      
+      // Get permissions
+      let permissions = [];
+      try {
+        const permissionsData = await rbacApi.myPermissions();
+        permissions = permissionsData.permissions || [];
+      } catch (permError) {
+        console.warn("Failed to fetch permissions:", permError);
+        permissions = [];
+      }
+
+      // Extract roles from user data
+      const roles = user.roles || [];
+      const rolesV2 = user.roles_v2 || [];
+
+      return {
+        user,
+        roles,
+        rolesV2,
+        permissions,
+        userId: user.id,
+        // Helper function to check if user has specific permission
+        hasPermission: (permission: string) => {
+          return permissions.some((p: any) => 
+            p.name === permission || p.codename === permission || p === permission
+          );
+        },
+        // Helper function to check if user has any of the specified permissions
+        hasAnyPermission: (permissionList: string[]) => {
+          return permissionList.some(permission => 
+            permissions.some((p: any) => 
+              p.name === permission || p.codename === permission || p === permission
+            )
+          );
+        }
+      };
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+      throw error;
+    }
   },
 
   updateProfile: async (data: UserUpdate): Promise<UserOut> => {
-    return apiFetch<UserOut>("/api/v1/users/me", {
+    // First get current user to get the ID
+    const currentUser = await apiFetch<UserOut>(`/api/v1/auth/me`);
+    return apiFetch<UserOut>(`/api/v1/users/${currentUser.id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });

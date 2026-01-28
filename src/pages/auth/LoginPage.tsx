@@ -15,7 +15,7 @@ import { Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 export const LoginPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login, verifyOTP } = useAuth();
+    const { login, requestOTP, verifyOTP } = useAuth();
     const [loginStep, setLoginStep] = useState<'password' | 'otp'>('password');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -47,7 +47,7 @@ export const LoginPage = () => {
                 await login(email, password);
 
                 // Phase 2: Request OTP for 2FA
-                await authApi.requestOTP(email);
+                await requestOTP(email, password);
 
                 setLoginStep('otp');
                 loginRateLimiter.recordSuccess(); // Partial success (credentials correct)

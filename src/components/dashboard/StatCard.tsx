@@ -7,7 +7,7 @@ interface StatCardProps {
   value: string | number;
   change?: number | string;
   changeLabel?: string;
-  icon: React.ElementType | ReactNode;
+  icon: React.ElementType;
   variant?: "default" | "primary" | "success" | "warning" | "destructive" | "blue" | "green" | "orange" | "red" | "purple";
   className?: string;
   style?: React.CSSProperties;
@@ -23,6 +23,11 @@ export function StatCard({
   className,
   style,
 }: StatCardProps) {
+  // Defensive checks
+  if (!title || !Icon) {
+    return null;
+  }
+
   const isPositive = typeof change === 'number' ? change > 0 : !change?.toString().includes("-");
 
   const variantStyles = {
@@ -80,7 +85,7 @@ export function StatCard({
           )}
         </div>
         <div className={cn("p-3 rounded-xl", iconStyles[variant as keyof typeof iconStyles])}>
-          {Icon && (typeof Icon === 'function' ? <Icon className="w-5 h-5" /> : Icon)}
+          {typeof Icon === 'function' ? <Icon className="w-5 h-5" /> : null}
         </div>
       </div>
     </div>

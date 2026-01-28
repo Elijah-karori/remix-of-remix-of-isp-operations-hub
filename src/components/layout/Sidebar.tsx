@@ -141,6 +141,7 @@ const systemNavItems: NavItem[] = [
 export function Sidebar() {
   const { user, hasPermission, getFilteredMenus } = useAuth();
   const menus = getFilteredMenus();
+  const [collapsed, setCollapsed] = useState(false);
 
   const isActive = (href?: string, children?: any[]) => {
     if (!href) return false;
@@ -177,7 +178,17 @@ export function Sidebar() {
   // Helper to render dynamic menu items
   const renderMenuItem = (item: any, isCollapsed: boolean, depth = 0) => {
     const hasChildren = item.children && item.children.length > 0;
-    const Icon = typeof item.icon === 'string' ? getIcon(item.icon) : (item.icon || LayoutDashboard);
+    let Icon: React.ElementType = LayoutDashboard;
+    
+    // Handle icon properly
+    if (item.icon) {
+      if (typeof item.icon === 'string') {
+        Icon = getIcon(item.icon);
+      } else if (typeof item.icon === 'function') {
+        Icon = item.icon;
+      }
+    }
+    
     const path = item.path || item.href || '';
 
     // For dynamic menus from backend, we use 'key' or 'label'

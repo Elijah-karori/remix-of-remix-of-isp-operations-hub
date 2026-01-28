@@ -10,11 +10,13 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isAuthChecked: boolean;
   login: (email: string, password: string) => Promise<{ status: string }>;
+  requestOTP: (email: string, password: string) => Promise<{ message: string }>;
   verifyOTP: (email: string, otp: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   refreshUser: () => Promise<void>;
+  getProfile: () => Promise<any>;
   getUserRoles: () => string[];
   getFilteredMenus: () => any[];
 }

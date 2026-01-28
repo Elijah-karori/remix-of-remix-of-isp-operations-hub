@@ -21,7 +21,7 @@ interface TesterCoverageData {
 }
 
 const TesterCoverage: React.FC = () => {
-  const { data, isLoading, error } = useQuery<TesterCoverageData[], Error>({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['testerCoverage'],
     queryFn: () => dashboardApi.testerCoverage(),
   });
@@ -56,7 +56,7 @@ const TesterCoverage: React.FC = () => {
           <CardDescription>Detailed breakdown of automated test coverage per application module.</CardDescription>
         </CardHeader>
         <CardContent>
-          {data && data.length > 0 ? (
+          {data && Array.isArray(data) && data.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -69,16 +69,28 @@ const TesterCoverage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.map((coverage, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{coverage.module}</TableCell>
-                    <TableCell>{coverage.total_tests}</TableCell>
-                    <TableCell>{coverage.passed_tests}</TableCell>
-                    <TableCell>{coverage.failed_tests}</TableCell>
-                    <TableCell>{coverage.coverage_percentage.toFixed(2)}%</TableCell>
-                    <TableCell>{new Date(coverage.last_run_date).toLocaleDateString()}</TableCell>
-                  </TableRow>
-                ))}
+                {data.map((coverage: any, index: number) => {
+                  // Safely extract coverage percentage with fallback
+                  const coveragePercentage = coverage?.coverage_percentage;
+                  const formattedPercentage = coveragePercentage != null && !isNaN(coveragePercentage) 
+                    ? parseFloat(coveragePercentage).toFixed(2) 
+                    : 'N/A';
+                  
+                  return (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{coverage?.module || 'Unknown'}</TableCell>
+                      <TableCell>{coverage?.total_tests || 0}</TableCell>
+                      <TableCell>{coverage?.passed_tests || 0}</TableCell>
+                      <TableCell>{coverage?.failed_tests || 0}</TableCell>
+                      <TableCell>{formattedPercentage}%</TableCell>
+                      <TableCell>
+                        {coverage?.last_run_date 
+                          ? new Date(coverage.last_run_date).toLocaleDateString() 
+                          : 'N/A'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : (

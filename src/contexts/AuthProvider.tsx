@@ -23,19 +23,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         try {
             setIsLoading(true);
-            const userData = await authApi.me() as User;
-            setUser(userData);
-
-            try {
-                const permissionsData = await rbacApi.myPermissions();
-                const perms = permissionsData.permissions.map((p: any) => p.name || p.codename);
-                setPermissions(perms);
-            } catch (permError) {
-                setPermissions([]);
-            }
-
+            
+            // Use the new getProfile function to get all data at once
+            const profileData = await authApi.getProfile();
+            
+            // Set user data
+            setUser(profileData.user);
+            
+            // Set permissions (flatten the permissions array)
+            const perms = profileData.permissions.map((p: any) => p.name || p.codename || p);
+            setPermissions(perms);
+            
             return true;
         } catch (error) {
+            console.error("Failed to fetch user profile:", error);
             if (error instanceof Error &&
                 (error.message.includes("Session expired") ||
                     error.message.includes("401") ||
@@ -59,6 +60,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
         try {
             const response = await authApi.login(email, password);
+            setIsLoading(false);
+            return response;
+        } catch (error) {
+            setIsLoading(false);
+            throw error;
+        }
+    };
+
+    const requestOTP = async (email: string, password: string) => {
+        setIsLoading(true);
+        try {
+            const response = await authApi.requestOTP(email, password);
             setIsLoading(false);
             return response;
         } catch (error) {
@@ -127,6 +140,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchUserAndPermissions();
     };
 
+    const getProfile = async () => {
+        return await authApi.getProfile();
+    };
+
     const hasAnyPermission = (permissionsToCheck: string[]) => {
         return permissionsToCheck.some(permission => hasPermission(permission));
     };
@@ -155,11 +172,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isAuthenticated: !!user,
                 isAuthChecked,
                 login,
+                requestOTP,
                 verifyOTP,
                 logout,
                 hasPermission,
                 hasAnyPermission,
                 refreshUser,
+                getProfile,
                 getUserRoles,
                 getFilteredMenus,
             }}

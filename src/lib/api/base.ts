@@ -1,6 +1,8 @@
 import { Token } from '../../types/api';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL|| "http://localhost:8000";
+export const API_BASE_URL = import.meta.env.DEV 
+  ? '' // Use relative URLs in dev to leverage Vite proxy
+  : (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000");
 
 // Token storage keys
 const STORAGE_KEY = 'access_token';
@@ -55,6 +57,38 @@ export const setAccessToken = (token: string | null, rememberMe = false) => {
 };
 
 export const getAccessToken = () => accessToken;
+
+/**
+ * Decode JWT token to get payload (without verification)
+ * Note: This is for extracting user ID, not for security validation
+ */
+export const decodeJWT = (token: string): any => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Failed to decode JWT:', error);
+    return null;
+  }
+};
+
+/**
+ * Get current user ID from JWT token
+ */
+export const getCurrentUserId = (): number | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+  
+  const decoded = decodeJWT(token);
+  return decoded?.sub ? parseInt(decoded.sub) : null;
+};
 
 /**
  * Check if "Remember Me" is currently active

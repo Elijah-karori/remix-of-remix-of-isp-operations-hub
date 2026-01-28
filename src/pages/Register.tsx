@@ -73,11 +73,11 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      await authApi.requestRegistrationOTP(
-        formData.email,
-        formData.full_name,
-        formData.phone_number || undefined
-      );
+      await authApi.requestRegistrationOTP({
+        email: formData.email,
+        full_name: formData.full_name,
+        phone: formData.phone_number || undefined
+      });
       console.log("OTP registration requested for:", formData.email);
       navigate("/verify-otp", {
         state: {

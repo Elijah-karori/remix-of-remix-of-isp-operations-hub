@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SessionTimeoutWarning } from "@/components/auth/SessionTimeoutWarning";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { initializeSecurity } from "@/lib/security/csp";
 
 // New Authentication Pages
@@ -61,16 +62,22 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <AuthProvider>
-            <SessionTimeoutWarning />
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <AuthProvider>
+              <SessionTimeoutWarning />
 
-            <Routes>
-              {/* Authentication Routes */}
+              <Routes>
+                {/* Authentication Routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/auth/register" element={<RegisterRequestPage />} />
+                <Route path="/auth/register/verify" element={<RegisterVerifyPage />} />
+                <Route path="/auth/passwordless/request" element={<PasswordlessRequestPage />} />
+                <Route path="/auth/passwordless/verify-otp" element={<PasswordlessVerifyOtpPage />} />
+                <Route path="/auth/passwordless/verify" element={<MagicLinkVerify />} />
+                <Route path="/auth/set-password" element={<SetPasswordPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/auth/register" element={<RegisterRequestPage />} />
               <Route path="/auth/register/verify" element={<RegisterVerifyPage />} />
@@ -282,6 +289,7 @@ const App = () => {
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
