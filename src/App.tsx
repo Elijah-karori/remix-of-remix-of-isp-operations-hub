@@ -94,7 +94,7 @@ const App = () => {
               <Route // New route for CRM Leads
                 path="/crm/leads"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="crm:leads:read">
                     <Leads />
                   </ProtectedRoute>
                 }
@@ -102,7 +102,7 @@ const App = () => {
               <Route // New route for CRM Deals
                 path="/crm/deals"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="crm:deals:read">
                     <Deals />
                   </ProtectedRoute>
                 }
@@ -110,7 +110,7 @@ const App = () => {
               <Route // New route for CRM Activities
                 path="/crm/activities"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="crm:activities:read">
                     <Activities />
                   </ProtectedRoute>
                 }
@@ -118,7 +118,7 @@ const App = () => {
               <Route // New route for CRM Index
                 path="/crm"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="crm:read">
                     <CRMIndex />
                   </ProtectedRoute>
                 }
@@ -126,7 +126,7 @@ const App = () => {
               <Route
                 path="/projects"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="projects:read">
                     <Projects />
                   </ProtectedRoute>
                 }
@@ -142,7 +142,7 @@ const App = () => {
               <Route
                 path="/tasks"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="tasks:read">
                     <Tasks />
                   </ProtectedRoute>
                 }
@@ -150,7 +150,7 @@ const App = () => {
               <Route // Consolidated Finance page with tabs
                 path="/finance"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="finance:read">
                     <Finance />
                   </ProtectedRoute>
                 }
@@ -158,7 +158,7 @@ const App = () => {
               <Route
                 path="/inventory"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="inventory:read">
                     <Inventory />
                   </ProtectedRoute>
                 }
@@ -166,7 +166,7 @@ const App = () => {
               <Route
                 path="/hr"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="hr:read">
                     <HRIndex />
                   </ProtectedRoute>
                 }
@@ -174,7 +174,7 @@ const App = () => {
               <Route
                 path="/hr/employees"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="hr:employees:read">
                     <Employees />
                   </ProtectedRoute>
                 }
@@ -182,7 +182,7 @@ const App = () => {
               <Route
                 path="/hr/payroll"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="hr:payroll:read">
                     <Payroll />
                   </ProtectedRoute>
                 }
@@ -190,7 +190,7 @@ const App = () => {
               <Route
                 path="/hr/complaints"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="hr:complaints:read">
                     <HRComplaints />
                   </ProtectedRoute>
                 }
@@ -198,7 +198,7 @@ const App = () => {
               <Route
                 path="/technicians"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="technicians:read">
                     <TechniciansIndex />
                   </ProtectedRoute>
                 }

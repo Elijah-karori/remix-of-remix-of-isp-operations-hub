@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { authApi } from '@/lib/api/auth';
 import { loginRateLimiter } from '@/lib/security/rateLimit';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,10 +15,11 @@ import { Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 export const LoginPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login } = useAuth();
-
+    const { login, verifyOTP } = useAuth();
+    const [loginStep, setLoginStep] = useState<'password' | 'otp'>('password');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [otp, setOtp] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -40,12 +42,24 @@ export const LoginPage = () => {
         setIsLoading(true);
 
         try {
-            await login(email, password, rememberMe);
-            loginRateLimiter.recordSuccess();
+            if (loginStep === 'password') {
+                // Phase 1: Verify Password
+                await login(email, password);
 
-            // Redirect to intended destination or dashboard
-            const from = (location.state as any)?.from?.pathname || '/';
-            navigate(from, { replace: true });
+                // Phase 2: Request OTP for 2FA
+                await authApi.requestOTP(email);
+
+                setLoginStep('otp');
+                loginRateLimiter.recordSuccess(); // Partial success (credentials correct)
+            } else {
+                // Phase 3: Verify OTP and get Token
+                await verifyOTP(email, otp, rememberMe);
+                loginRateLimiter.recordSuccess();
+
+                // Redirect to intended destination or dashboard
+                const from = (location.state as any)?.from?.pathname || '/';
+                navigate(from, { replace: true });
+            }
         } catch (err) {
             loginRateLimiter.recordFailedAttempt();
             const remaining = loginRateLimiter.getRemainingAttempts();
@@ -70,15 +84,17 @@ export const LoginPage = () => {
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        Welcome back
+                        {loginStep === 'password' ? 'Welcome back' : 'Verify Identity'}
                     </CardTitle>
                     <CardDescription>
-                        Sign in to your ERP account to continue
+                        {loginStep === 'password'
+                            ? 'Sign in to your ERP account to continue'
+                            : `Enter the 6-digit code sent to ${email}`}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {/* Success message from registration */}
-                    {successMessage && (
+                    {successMessage && !error && (
                         <Alert className="bg-green-50 border-green-200">
                             <AlertDescription className="text-green-800">
                                 {successMessage}
@@ -86,90 +102,140 @@ export const LoginPage = () => {
                         </Alert>
                     )}
 
-                    {/* Standard Login Form */}
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    {loginStep === 'password' ? (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder="name@company.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="pl-10"
+                                        required
+                                        disabled={isLoading}
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="password">Password</Label>
+                                    <Button
+                                        type="button"
+                                        variant="link"
+                                        className="px-0 text-sm h-auto"
+                                        onClick={() => navigate('/auth/passwordless/request')}
+                                    >
+                                        Forgot password?
+                                    </Button>
+                                </div>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="pl-10"
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="remember"
+                                    checked={rememberMe}
+                                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                                    disabled={isLoading}
+                                />
+                                <Label
+                                    htmlFor="remember"
+                                    className="text-sm font-normal cursor-pointer"
+                                >
+                                    Remember me
+                                </Label>
+                            </div>
+
+                            {error && (
+                                <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
+                            )}
+
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Verifying...
+                                    </>
+                                ) : (
+                                    'Next'
+                                )}
+                            </Button>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2 text-center">
                                 <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="name@company.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-10"
+                                    id="otp"
+                                    type="text"
+                                    placeholder="000000"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    className="text-center text-3xl tracking-[0.5em] font-bold h-16"
                                     required
+                                    maxLength={6}
                                     disabled={isLoading}
                                     autoFocus
                                 />
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
-                                <Button
-                                    type="button"
-                                    variant="link"
-                                    className="px-0 text-sm h-auto"
-                                    onClick={() => navigate('/auth/passwordless/request')}
-                                >
-                                    Forgot password?
-                                </Button>
-                            </div>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-10"
-                                    required
-                                    disabled={isLoading}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="remember"
-                                checked={rememberMe}
-                                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                                disabled={isLoading}
-                            />
-                            <Label
-                                htmlFor="remember"
-                                className="text-sm font-normal cursor-pointer"
-                            >
-                                Remember me
-                            </Label>
-                        </div>
-
-                        {error && (
-                            <Alert variant="destructive">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                        )}
-
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Signing in...
-                                </>
-                            ) : (
-                                'Sign in'
+                            {error && (
+                                <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
                             )}
-                        </Button>
-                    </form>
+
+                            <Button
+                                type="submit"
+                                className="w-full h-12 text-lg"
+                                disabled={isLoading || otp.length !== 6}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Authenticating...
+                                    </>
+                                ) : (
+                                    'Verify & Login'
+                                )}
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="w-full"
+                                onClick={() => setLoginStep('password')}
+                                disabled={isLoading}
+                            >
+                                Back to Password
+                            </Button>
+                        </form>
+                    )}
 
                     {/* Divider */}
                     <div className="relative">

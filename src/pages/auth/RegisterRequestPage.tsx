@@ -24,7 +24,7 @@ export const RegisterRequestPage = () => {
         setIsLoading(true);
 
         try {
-            await authApi.requestRegistrationOTP(email, fullName, phone);
+            await authApi.requestRegistrationOTP({ email, fullName, phone });
             setSuccess('Account created! OTP sent to your email.');
 
             // Redirect to OTP verification page
